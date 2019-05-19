@@ -519,14 +519,7 @@ namespace octomap {
     bool created_node = false;
     if (current_depth == target_depth || current_depth == this->tree_depth) {
       // At the target node (or end of tree). Delete all children and set the log odds
-      if (this->nodeHasChildren(node)) {
-        for (unsigned int i=0; i<8; i++) {
-          if (this->nodeChildExists(node, i)) {
-            this->deleteNodeRecurs(this->getNodeChild(node, i));
-            this->setNodeChild(node, i, NULL);
-          }
-        }
-      }
+      this->deleteNodeChildren(node);
       node->setLogOdds(log_odds_value);
       return node;
     }
@@ -557,6 +550,257 @@ namespace octomap {
       }
     }
     return retval;
+  }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
+                                                bool maximum_only, bool delete_first,
+                                                CopyValueFunction copy_value_function){
+    setTreeValues(value_tree, NULL, maximum_only, delete_first, copy_value_function);
+  }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
+                                                const OccupancyOcTreeBase<NODE>* bounds_tree,
+                                                bool maximum_only, bool delete_first,
+                                                CopyValueFunction copy_value_function){
+    // delete_first implies maximum_only = false.
+    if (delete_first)
+      maximum_only = false;
+
+    bool created_root = false;
+    if (this->root == NULL)
+    {
+      this->root = new NODE();
+      this->tree_size++;
+      created_root = true;
+    }
+
+    const NODE* value_node = NULL;
+    if (value_tree != NULL) {
+      value_node = value_tree->root;
+    }
+
+    const NODE* bounds_node = NULL;
+    if (bounds_tree != NULL) {
+      bounds_node = bounds_tree->root;
+    }
+
+    this->root = setTreeValuesRecurs(this->root,
+                                     created_root,
+                                     value_tree,
+                                     bounds_tree,
+                                     value_node,
+                                     bounds_node,
+                                     maximum_only,
+                                     delete_first,
+                                     copy_value_function);
+  }
+
+  template <class NODE>
+  NODE* OccupancyOcTreeBase<NODE>::setTreeValuesRecurs(NODE* node,
+                                                       bool node_just_created,
+                                                       const OccupancyOcTreeBase<NODE>* value_tree,
+                                                       const OccupancyOcTreeBase<NODE>* bounds_tree,
+                                                       const NODE* value_node,
+                                                       const NODE* bounds_node,
+                                                       bool maximum_only,
+                                                       bool delete_first,
+                                                       CopyValueFunction copy_value_function){
+    if (bounds_tree != NULL && bounds_node == NULL) {
+      // We are out-of-bounds.
+      // Must check this first to not attempt referencing bounds_node
+    } else if (bounds_tree != NULL && bounds_tree->nodeHasChildren(bounds_node)) {
+      // We aren't yet in a leaf of the bounds tree, descend
+      // First expand if our node is a pruned leaf.
+      if (!this->nodeHasChildren(node) && !node_just_created) {
+        // Our node is a leaf. Expand it as we will need
+        // to update some of the sub-nodes.
+        this->expandNode(node);
+      }
+      for (unsigned int i=0; i<8; ++i) {
+        if (bounds_tree->nodeChildExists(bounds_node, i)) {
+          const NODE* value_child = NULL;
+          if (value_node) {
+            if (!value_tree->nodeHasChildren(value_node)) {
+              // The value node is a leaf, just keep it the same as we
+              // descend, as all we need is its value to set.
+              value_child = value_node;
+            } else if (value_tree->nodeChildExists(value_node, i)) {
+              value_child = value_tree->getNodeChild(value_node, i);
+            }
+          }
+          // If the value child node is NULL, there is nothing left to do,
+          // unless delete_first is set.
+          if (delete_first || value_child != NULL) {
+            bool created_node = false;
+            if (!this->nodeChildExists(node, i)) {
+              // The child does not exist. Create a child if appropriate.
+              if (delete_first && value_child == NULL) {
+                // There is no point in creating a node that will certainly
+                // be deleted. Do nothing.
+              } else {
+                this->createNodeChild(node, i);
+                created_node = true;
+              }
+            }
+            // It is possible to still have no child in the case that we are
+            // set to delete_first and the value tree is empty here. In such a
+            // case, there is no point in creating nodes just to delete them.
+            if (this->nodeChildExists(node, i)) {
+              NODE* rv = setTreeValuesRecurs(this->getNodeChild(node, i),
+                                             created_node,
+                                             value_tree,
+                                             bounds_tree,
+                                             value_child,
+                                             bounds_tree->getNodeChild(bounds_node, i),
+                                             maximum_only,
+                                             delete_first,
+                                             copy_value_function);
+              this->setNodeChild(node, i, rv);
+            }
+          }
+        }
+      }
+      if (node != NULL && !this->nodeHasChildren(node)) {
+        // We didn't end up with any children. Since we haven't pruned this
+        // node yet, this means we lost any children we had to start with.
+        // Delete.
+        this->deleteNodeRecurs(node);
+        node = NULL;
+      }
+    } else {
+      // we are inside the bounds of the update
+      if (delete_first) {
+        if (value_node == NULL) {
+          // There are no values to copy over, delete this node completely.
+          this->deleteNodeRecurs(node);
+          node = NULL;
+        } else if (this->nodeHasChildren(node)) {
+          // There is at least some value to copy over and we have children.
+          // Delete all our children so they can be replaced by the values.
+          this->deleteNodeChildren(node);
+          // Be sure to set node_just_created as this indicates that the given
+          // node is not a pruned leaf, even though it has no children.
+          node_just_created = true;
+        }
+      }
+      setTreeValuesRecurs(node, node_just_created, value_tree, value_node, maximum_only, copy_value_function);
+    }
+    if (node != NULL && node_just_created && !this->nodeHasChildren(node) && value_node == NULL) {
+      // We are not a leaf node and didn't end up with any children after being newly created. Delete.
+      this->deleteNodeRecurs(node);
+      node = NULL;
+    }
+    if (node != NULL) {
+      // If our node is still alive, and has children, attempt a prune, and
+      // then update our occupancy if we didn't prune our kids.
+      if (this->nodeHasChildren(node)) {
+        if (!this->pruneNode(node)) {
+          node->updateOccupancyChildren();
+        }
+      }
+    }
+    return node;
+  }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::setTreeValuesRecurs(NODE* node,
+                                                      bool node_just_created,
+                                                      const OccupancyOcTreeBase<NODE>* value_tree,
+                                                      const NODE* value_node,
+                                                      bool maximum_only,
+                                                      CopyValueFunction copy_value_function){
+    if (node == NULL || value_tree == NULL || value_node == NULL)
+      return;
+    if (!value_tree->nodeHasChildren(value_node)) {
+      // The value node has no children (its a leaf)
+      if (!this->nodeHasChildren(node)) {
+        // both nodes are leafs
+        if (node_just_created || !maximum_only || value_node->getValue() > node->getValue()) {
+          // Update our node if it was just created (which means its empty),
+          // or if we are not setting only maximum values, or if the value
+          // node is a higher log odds than this node. Otherwise, there is
+          // nothing to set.
+          if (copy_value_function) {
+            copy_value_function(value_node, node);
+          } else {
+            node->copyData(*value_node);
+          }
+        }
+      } else {
+        // The value node is a leaf, but we are not.
+        if (!maximum_only) {
+          // We are updating all values, not just maximum. Delete our children
+          // and copy the value node's data into our node.
+          this->deleteNodeChildren(node);
+          if (copy_value_function) {
+            copy_value_function(value_node, node);
+          } else {
+            node->copyData(*value_node);
+          }
+        } else {
+          // Descend our tree, but keep using the node pointer from the
+          // value tree's leaf to get its log odds value.  It is necessary
+          // to descend. Consider, we may have log odds -1.0 and 2.0 in
+          // our sub tree, and the value node may point to a leaf with
+          // value of 1.0. Since we are using maximum only, we must only
+          // change our log odds values that are smaller.
+          for (unsigned int i=0; i<8; ++i) {
+            if (this->nodeChildExists(node, i)) {
+              // In this case the value node is already at a leaf.
+              // This value node leaf is OK to pass down the recursion, as all
+              // we need is its value.
+              setTreeValuesRecurs(this->getNodeChild(node, i),
+                                  false,
+                                  value_tree,
+                                  value_node,
+                                  true,
+                                  copy_value_function);
+            } else {
+              // The value node has a value for this space, but we don't have
+              // a child for it. Create a leaf node for our child and assign
+              // it the value.
+              this->createNodeChild(node, i);
+              NODE* child_node = this->getNodeChild(node, i);
+              if (copy_value_function) {
+                copy_value_function(value_node, child_node);
+              } else {
+                child_node->copyData(*value_node);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // The value node has children. We must descend.
+      for (unsigned int i=0; i<8; ++i) {
+        if (value_tree->nodeChildExists(value_node, i)) {
+          bool created_node = false;
+          if (!this->nodeChildExists(node, i)) {
+            if (!this->nodeHasChildren(node) && !node_just_created) {
+              // Our node is a leaf. Expand it so we can update indivdual
+              // leaves as we go.
+              this->expandNode(node);
+            } else {
+              this->createNodeChild(node, i);
+              created_node = true;
+            }
+          }
+          setTreeValuesRecurs(this->getNodeChild(node, i),
+                              created_node,
+                              value_tree,
+                              value_tree->getNodeChild(value_node, i),
+                              maximum_only,
+                              copy_value_function);
+        }
+      }
+    }
+    if (this->nodeHasChildren(node)) {
+      if (!this->pruneNode(node)) {
+        node->updateOccupancyChildren();
+      }
+    }
   }
 
   template <class NODE>

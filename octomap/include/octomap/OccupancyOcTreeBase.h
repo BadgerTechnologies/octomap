@@ -38,6 +38,7 @@
 #include <list>
 #include <stdlib.h>
 #include <vector>
+#include <functional>
 
 #include "octomap_types.h"
 #include "octomap_utils.h"
@@ -144,6 +145,56 @@ namespace octomap {
      *   This speeds up the insertion, but you need to call updateInnerOccupancy() when done.
      */
      virtual void insertPointCloudRays(const Pointcloud& scan, const point3d& sensor_origin, double maxrange = -1., bool lazy_eval = false);
+
+     /** Used to copy values in setTreeValues */
+     using CopyValueFunction = std::function<void(const NODE*, NODE*)>;
+
+     /**
+      * Set this tree's values from another tree.
+      *
+      * Note: this operation does not currently work with change detection.
+      * It would be very inefficient to push potentially millions of
+      * OcTreeKeys into a KeySet.
+      *
+      * @param value_tree   OccupancyOcTree containing the values to set.
+      * @param maximum_only Only set a value from value_tree if it is bigger
+      *                     than what is in our tree.
+      * @param delete_first Deletes this tree first.
+      */
+     virtual void setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
+                                bool maximum_only = false,
+                                bool delete_first = false,
+                                CopyValueFunction copy_value_function = CopyValueFunction());
+
+     /**
+      * Set this tree's values from another tree, using a third bounds tree.
+      * Only modifies the contents of this tree from the value_tree where the
+      * bounds_tree is defined. An application of this function is to update
+      * this tree from an accumulated update tree as the values tree and a
+      * separate tree that represents the bounding boxes of all the regions
+      * that have changed. Node pruning makes an OcTree an efficent mechanism
+      * to specify all the regions of interest. It is not possible to represent
+      * regions that should be erased in an OccupancyOcTreeBase with
+      * OcTreeDataNode's. Also, while a KeySet may seem a natural way of
+      * specifying the bounds, a KeySet only represents leaves at the maximum
+      * depth and has no opportunity for pruning nearby update regions.
+      *
+      * Note: this operation does not currently work with change detection.
+      * It would be very inefficient to push potentially millions of
+      * OcTreeKeys into a KeySet.
+      *
+      * @param value_tree   OccupancyOcTree containing the values to set
+      * @param bounds_tree  OccupancyOcTree indicating bounds for setting
+      * @param maximum_only Only set a value from value_tree if it is bigger
+      *                     than what is in our tree.
+      * @param delete_first Deletes nodes inside the regions defined by the
+      *                     bounds_tree first.
+      */
+     virtual void setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
+                                const OccupancyOcTreeBase<NODE>* bounds_tree,
+                                bool maximum_only = false,
+                                bool delete_first = false,
+                                CopyValueFunction copy_value_function = CopyValueFunction());
 
      /**
       * Set log_odds value of voxel to log_odds_value. This only works if key is at the lowest
@@ -499,6 +550,25 @@ namespace octomap {
     NODE* setNodeValueAtDepthRecurs(NODE* node, bool node_just_created, const OcTreeKey& key,
                            unsigned int current_depth, unsigned int target_depth,
                            float log_odds_value, bool lazy_eval = false);
+
+    // recursive update values from other tree with bounds
+    NODE* setTreeValuesRecurs(NODE* node,
+                              bool node_just_created,
+                              const OccupancyOcTreeBase<NODE>* value_tree,
+                              const OccupancyOcTreeBase<NODE>* bounds_tree,
+                              const NODE* value_node,
+                              const NODE* bounds_node,
+                              bool maximum_only,
+                              bool delete_first,
+                              CopyValueFunction copy_value_function);
+
+    // recursive update values from other tree
+    void setTreeValuesRecurs(NODE* node,
+                             bool node_just_created,
+                             const OccupancyOcTreeBase<NODE>* value_tree,
+                             const NODE* value_node,
+                             bool maximum_only,
+                             CopyValueFunction copy_value_function);
 
     void updateInnerOccupancyRecurs(NODE* node, unsigned int depth);
     
