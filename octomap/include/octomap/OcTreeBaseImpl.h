@@ -134,7 +134,10 @@ namespace octomap {
     
     /// @return const ptr to child number childIdx of node
     const NODE* getNodeChild(const NODE* node, unsigned int childIdx) const;
-    
+
+    /// Set child number childIdx of node
+    void setNodeChild(NODE* node, unsigned int childIdx, NODE* child) const;
+
     /// A node is collapsible if all children exist, don't have children of their own
     /// and have the same occupancy value
     virtual bool isNodeCollapsible(const NODE* node) const;
