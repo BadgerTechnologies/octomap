@@ -29,6 +29,8 @@ if(BUILD_TESTING)
   ADD_EXECUTABLE(test_bbx test_bbx.cpp)
   TARGET_LINK_LIBRARIES(test_bbx octomap)
 
+  ADD_EXECUTABLE(test_set_tree_values test_set_tree_values.cpp)
+  TARGET_LINK_LIBRARIES(test_set_tree_values octomap octomath)
 
   # CTest tests below
 
@@ -46,6 +48,7 @@ if(BUILD_TESTING)
   ADD_TEST (NAME test_raycasting    COMMAND test_raycasting)
   ADD_TEST (NAME test_io            COMMAND test_io ${PROJECT_SOURCE_DIR}/share/data/geb079.bt)
   ADD_TEST (NAME test_pruning       COMMAND test_pruning )
+  ADD_TEST (NAME test_set_tree_values COMMAND test_set_tree_values )
   ADD_TEST (NAME test_iterators     COMMAND test_iterators ${PROJECT_SOURCE_DIR}/share/data/geb079.bt)
   ADD_TEST (NAME test_mapcollection COMMAND test_mapcollection ${PROJECT_SOURCE_DIR}/share/data/mapcoll.txt)
   ADD_TEST (NAME test_color_tree    COMMAND test_color_tree)
