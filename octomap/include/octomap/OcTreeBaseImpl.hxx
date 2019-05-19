@@ -211,6 +211,12 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::setNodeChild(NODE* node, unsigned int childIdx, NODE* child) const{
+    assert((childIdx < 8) && (node->children != NULL));
+    node->children[childIdx] = child;
+  }
+
+  template <class NODE,class I>
   bool OcTreeBaseImpl<NODE,I>::isNodeCollapsible(const NODE* node) const{
     // all children must exist, must not have children of
     // their own and have the same occupancy probability
