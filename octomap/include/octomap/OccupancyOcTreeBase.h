@@ -184,6 +184,20 @@ namespace octomap {
      virtual NODE* setNodeValue(double x, double y, double z, float log_odds_value, bool lazy_eval = false);
 
      /**
+      * Set log_odds value of super-voxel at depth to log_odds_value.
+      * This will delete any old children of the node and make this a (pruned)
+      * leaf representing the given value.
+      *
+      * @param key OcTreeKey of the NODE that is to be set
+      * @param key depth of the NODE that is to be set
+      * @param log_odds_value value to be set as the log_odds value of the node
+      * @param lazy_eval whether update of inner nodes is omitted after the update (default: false).
+      *   This speeds up the insertion, but you need to call updateInnerOccupancy() when done.
+      * @return pointer to the updated NODE
+      */
+     virtual NODE* setNodeValueAtDepth(const OcTreeKey& key, unsigned int depth, float log_odds_value, bool lazy_eval = false);
+
+     /**
       * Manipulate log_odds value of a voxel by changing it by log_odds_update (relative).
       * This only works if key is at the lowest octree level
       *
@@ -481,6 +495,10 @@ namespace octomap {
     
     NODE* setNodeValueRecurs(NODE* node, bool node_just_created, const OcTreeKey& key,
                            unsigned int depth, const float& log_odds_value, bool lazy_eval = false);
+
+    NODE* setNodeValueAtDepthRecurs(NODE* node, bool node_just_created, const OcTreeKey& key,
+                           unsigned int current_depth, unsigned int target_depth,
+                           float log_odds_value, bool lazy_eval = false);
 
     void updateInnerOccupancyRecurs(NODE* node, unsigned int depth);
     
