@@ -661,7 +661,6 @@ namespace octomap {
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::deleteNodeRecurs(NODE* node){
     assert(node);
-    // TODO: maintain tree size?
 
     if (node->children != NULL) {
       for (unsigned int i=0; i<8; i++) {
@@ -674,6 +673,8 @@ namespace octomap {
     } // else: node has no children
 
     delete node;
+    tree_size--;
+    size_changed = true;
   }
 
 
