@@ -296,6 +296,24 @@ namespace octomap {
     return setNodeValue(key, log_odds_value, lazy_eval);
   }
 
+  template <class NODE>
+  NODE* OccupancyOcTreeBase<NODE>::setNodeValueAtDepth(const OcTreeKey& key, unsigned int depth,
+                                                       float log_odds_value, bool lazy_eval) {
+    // clamp log odds within range:
+    log_odds_value = std::min(std::max(log_odds_value, this->clamping_thres_min), this->clamping_thres_max);
+
+    if (depth > this->tree_depth)
+      depth = this->tree_depth;
+
+    bool createdRoot = false;
+    if (this->root == NULL){
+      this->root = new NODE();
+      this->tree_size++;
+      createdRoot = true;
+    }
+
+    return setNodeValueAtDepthRecurs(this->root, createdRoot, key, 0, depth, log_odds_value, lazy_eval);
+  }
 
   template <class NODE>
   NODE* OccupancyOcTreeBase<NODE>::updateNode(const OcTreeKey& key, float log_odds_update, bool lazy_eval) {
@@ -488,6 +506,57 @@ namespace octomap {
       }
       return node;
     }
+  }
+
+  template <class NODE>
+  NODE* OccupancyOcTreeBase<NODE>::setNodeValueAtDepthRecurs(NODE* node,
+                                                             bool node_just_created,
+                                                             const OcTreeKey& key,
+                                                             unsigned int current_depth,
+                                                             unsigned int target_depth,
+                                                             float log_odds_value,
+                                                             bool lazy_eval) {
+    bool created_node = false;
+    if (current_depth == target_depth || current_depth == this->tree_depth) {
+      // At the target node (or end of tree). Delete all children and set the log odds
+      if (this->nodeHasChildren(node)) {
+        for (unsigned int i=0; i<8; i++) {
+          if (this->nodeChildExists(node, i)) {
+            this->deleteNodeRecurs(this->getNodeChild(node, i));
+            this->setNodeChild(node, i, NULL);
+          }
+        }
+      }
+      node->setLogOdds(log_odds_value);
+      return node;
+    }
+
+    // Not yet at the target node. Decend the tree.
+    unsigned int pos = computeChildIdx(key, this->tree_depth - 1 - current_depth);
+    if (!this->nodeChildExists(node, pos)) {
+      if (!this->nodeHasChildren(node) && !node_just_created) {
+        // was a pruned node, expand it
+        this->expandNode(node);
+      } else {
+        // create new child
+        this->createNodeChild(node, pos);
+        created_node = true;
+      }
+    }
+    NODE* retval = setNodeValueAtDepthRecurs(this->getNodeChild(node, pos),
+                                             created_node,
+                                             key,
+                                             current_depth + 1,
+                                             target_depth,
+                                             log_odds_value);
+    if (!lazy_eval) {
+      if (this->pruneNode(node)) {
+        retval = node;
+      } else {
+        node->updateOccupancyChildren();
+      }
+    }
+    return retval;
   }
 
   template <class NODE>
