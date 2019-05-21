@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 PROJECT( octovis )
 
+set(CMAKE_CXX_STANDARD 11)
+
 include(CTest)
 include(GNUInstallDirs)
 
