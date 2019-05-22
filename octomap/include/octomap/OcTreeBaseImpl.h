@@ -541,6 +541,7 @@ namespace octomap {
 
   protected:  
     void allocNodeChildren(NODE* node);
+    void deleteNodeChildren(NODE* node);
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 

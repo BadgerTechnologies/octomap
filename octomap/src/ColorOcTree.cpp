@@ -115,11 +115,7 @@ namespace octomap {
       node->setColor(node->getAverageChildColor());
 
     // delete children
-    for (unsigned int i=0;i<8;i++) {
-      deleteNodeChild(node, i);
-    }
-    delete[] node->children;
-    node->children = NULL;
+    deleteNodeChildren(node);
 
     return true;
   }

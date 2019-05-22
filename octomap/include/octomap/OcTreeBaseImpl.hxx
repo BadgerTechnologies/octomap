@@ -279,11 +279,7 @@ namespace octomap {
     node->copyData(*(getNodeChild(node, 0)));
 
     // delete children (known to be leafs at this point!)
-    for (unsigned int i=0;i<8;i++) {
-      deleteNodeChild(node, i);
-    }
-    delete[] node->children;
-    node->children = NULL;
+    deleteNodeChildren(node);
 
     return true;
   }
@@ -297,7 +293,18 @@ namespace octomap {
     }
   }
 
-
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteNodeChildren(NODE* node){
+    if (node->children != NULL) {
+      for (unsigned int i=0; i<8; i++) {
+        if (node->children[i] != NULL){
+          this->deleteNodeRecurs(static_cast<NODE*>(node->children[i]));
+        }
+      }
+      delete[] node->children;
+      node->children = NULL;
+    }
+  }
 
   template <class NODE,class I>
   inline key_type OcTreeBaseImpl<NODE,I>::coordToKey(double coordinate, unsigned depth) const{
@@ -668,15 +675,7 @@ namespace octomap {
   void OcTreeBaseImpl<NODE,I>::deleteNodeRecurs(NODE* node){
     assert(node);
 
-    if (node->children != NULL) {
-      for (unsigned int i=0; i<8; i++) {
-        if (node->children[i] != NULL){
-          this->deleteNodeRecurs(static_cast<NODE*>(node->children[i]));
-        }
-      }
-      delete[] node->children;
-      node->children = NULL;
-    } // else: node has no children
+    deleteNodeChildren(node);
 
     delete node;
     tree_size--;
