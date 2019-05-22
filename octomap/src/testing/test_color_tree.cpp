@@ -33,10 +33,10 @@ int main(int argc, char** argv) {
   }
 
   // insert some measurements of free cells
-  for (int x=-30; x<30; x++) {
-    for (int y=-30; y<30; y++) {
-      for (int z=-30; z<30; z++) {
-        point3d endpoint ((float) x*0.02f+2.0f, (float) y*0.02f+2.0f, (float) z*0.02f+2.0f);
+  for (int x=-12; x<12; x++) {
+    for (int y=-12; y<12; y++) {
+      for (int z=-12; z<12; z++) {
+        point3d endpoint ((float) x*0.05f+2.01f, (float) y*0.05f+2.01f, (float) z*0.05f+2.01f);
         ColorOcTreeNode* n = tree.updateNode(endpoint, false); 
         n->setColor(255,255,0); // set color to yellow
       }
