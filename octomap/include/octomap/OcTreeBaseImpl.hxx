@@ -394,6 +394,60 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double coordinate, key_type& keyval) const {
+
+    double min = keyToCoord(0);
+    double max = keyToCoord((tree_max_val-1)+tree_max_val);
+
+    if (coordinate > max) {
+      coordinate = max;
+    } else if (coordinate < min) {
+      coordinate = min;
+    }
+
+    keyval = coordToKey(coordinate);
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double coordinate, unsigned depth, key_type& keyval) const {
+
+    coordToKeyClamped(coordinate, keyval);
+    keyval = adjustKeyAtDepth(keyval, depth);
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(const point3d& point, OcTreeKey& key) const{
+
+    for (unsigned int i=0;i<3;i++) {
+      coordToKeyClamped( point(i), key[i]);
+    }
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(const point3d& point, unsigned depth, OcTreeKey& key) const{
+
+    for (unsigned int i=0;i<3;i++) {
+      coordToKeyClamped( point(i), depth, key[i]);
+    }
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double x, double y, double z, OcTreeKey& key) const{
+
+    coordToKeyClamped(x, key[0]);
+    coordToKeyClamped(y, key[1]);
+    coordToKeyClamped(z, key[2]);
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double x, double y, double z, unsigned depth, OcTreeKey& key) const{
+
+    coordToKeyClamped(x, depth, key[0]);
+    coordToKeyClamped(y, depth, key[1]);
+    coordToKeyClamped(z, depth, key[2]);
+  }
+
+  template <class NODE,class I>
   key_type OcTreeBaseImpl<NODE,I>::adjustKeyAtDepth(key_type key, unsigned int depth) const{
     unsigned int diff = tree_depth - depth;
 
