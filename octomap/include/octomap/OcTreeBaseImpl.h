@@ -478,6 +478,68 @@ namespace octomap {
      */
     bool coordToKeyChecked(double coordinate, unsigned depth, key_type& key) const;
 
+    /**
+     * Converts a 3D coordinate into a 3D OcTreeKey, clamping to the boundary.
+     *
+     * @param coord 3d coordinate of a point
+     * @param key values that will be computed, an array of fixed size 3.
+     * @return true if point is within the octree (valid), false otherwise
+     */
+    void coordToKeyClamped(const point3d& coord, OcTreeKey& key) const;
+
+    /**
+     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, clamping to the boundary.
+     *
+     * @param coord 3d coordinate of a point
+     * @param depth level of the key from the top
+     * @param key values that will be computed, an array of fixed size 3.
+     * @return true if point is within the octree (valid), false otherwise
+     */
+    void coordToKeyClamped(const point3d& coord, unsigned depth, OcTreeKey& key) const;
+
+    /**
+     * Converts a 3D coordinate into a 3D OcTreeKey, clamping to the boundary.
+     *
+     * @param x
+     * @param y
+     * @param z
+     * @param key values that will be computed, an array of fixed size 3.
+     * @return true if point is within the octree (valid), false otherwise
+     */
+    void coordToKeyClamped(double x, double y, double z, OcTreeKey& key) const;
+
+    /**
+     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, clamping to the boundary.
+     *
+     * @param x
+     * @param y
+     * @param z
+     * @param depth level of the key from the top
+     * @param key values that will be computed, an array of fixed size 3.
+     * @return true if point is within the octree (valid), false otherwise
+     */
+    void coordToKeyClamped(double x, double y, double z, unsigned depth, OcTreeKey& key) const;
+
+    /**
+     * Converts a single coordinate into a discrete addressing key, clamping to the boundary.
+     *
+     * @param coordinate 3d coordinate of a point
+     * @param key discrete 16 bit adressing key, result
+     * @return true if coordinate is within the octree bounds (valid), false otherwise
+     */
+    void coordToKeyClamped(double coordinate, key_type& key) const;
+
+    /**
+     * Converts a single coordinate into a discrete addressing key, clamping to the boundary.
+     *
+     * @param coordinate 3d coordinate of a point
+     * @param depth level of the key from the top
+     * @param key discrete 16 bit adressing key, result
+     * @return true if coordinate is within the octree bounds (valid), false otherwise
+     */
+    void coordToKeyClamped(double coordinate, unsigned depth, key_type& key) const;
+
+
     /// converts from a discrete key at a given depth into a coordinate
     /// corresponding to the key's center
     double keyToCoord(key_type key, unsigned depth) const;
