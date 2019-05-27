@@ -307,6 +307,23 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteNodeChildren(NODE* node, const OcTreeKey& key, unsigned int depth,
+                                                  DeletionCallback deletion_notifier){
+    if (node->children != NULL) {
+      key_type center_offset_key = tree_max_val >> (depth + 1);
+      for (unsigned int i=0; i<8; i++) {
+        if (node->children[i] != NULL){
+          OcTreeKey child_key;
+          computeChildKey(i, center_offset_key, key, child_key);
+          this->deleteNodeRecurs(static_cast<NODE*>(node->children[i]), child_key, depth + 1, deletion_notifier);
+        }
+      }
+      delete[] node->children;
+      node->children = NULL;
+    }
+  }
+
+  template <class NODE,class I>
   inline key_type OcTreeBaseImpl<NODE,I>::coordToKey(double coordinate, unsigned depth) const{
     assert (depth <= tree_depth);
     int keyval = ((int) floor(resolution_factor * coordinate));
@@ -576,6 +593,24 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteAABB(const point3d& min, const point3d& max, bool invert,
+                                          DeletionCallback deletion_notifier) {
+    OcTreeKey min_key, max_key;
+    coordToKeyClamped(min, min_key);
+    coordToKeyClamped(max, max_key);
+    deleteAABB(min_key, max_key, invert, deletion_notifier);
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteAABB(const OcTreeKey& min, const OcTreeKey& max, bool invert,
+                                          DeletionCallback deletion_notifier) {
+    octomap::OcTreeKey root_key(tree_max_val, tree_max_val, tree_max_val);
+    if (deleteAABBRecurs(min, max, root, root_key, 0, tree_depth, invert, deletion_notifier)) {
+      root = NULL;
+    }
+  }
+
+  template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::clear() {
     if (this->root){
       deleteNodeRecurs(root);
@@ -773,6 +808,126 @@ namespace octomap {
     }
     // node did not lose a child, or still has other children
     return false;
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteNodeRecurs(NODE* node, const OcTreeKey& key, unsigned int depth,
+                                                DeletionCallback deletion_notifier){
+    assert(node);
+    assert(deletion_notifier);
+
+    if (!nodeHasChildren(node)) {
+      // Only notify for leaf nodes
+      deletion_notifier(this, node, key, depth);
+    }
+
+    // Always call delete node children in the rare case there is a children
+    // pointer area in an inner node but all children pointers are NULL
+    deleteNodeChildren(node, key, depth, deletion_notifier);
+
+    delete node;
+    tree_size--;
+    size_changed = true;
+  }
+
+  template <class NODE,class I>
+  bool OcTreeBaseImpl<NODE,I>::deleteAABBRecurs(const OcTreeKey& min,
+                                                const OcTreeKey& max,
+                                                NODE* node,
+                                                const OcTreeKey& key,
+                                                unsigned int depth,
+                                                unsigned int max_depth,
+                                                bool invert,
+                                                DeletionCallback deletion_notifier) {
+    bool delete_node = false;
+    if (node != NULL && depth <= tree_depth && depth <= max_depth) {
+#ifndef NDEBUG
+      if (depth < tree_depth)
+      {
+        unsigned int mask = (1 << (tree_depth - depth - 1)) - 1;
+        assert((key[0] & mask) == 0);
+        assert((key[1] & mask) == 0);
+        assert((key[2] & mask) == 0);
+      }
+#endif
+      if (min[0] > max[0] || min[1] > max[1] || min[2] > max[2]) {
+        // The box has no volume.
+        if (invert) {
+          // A non-positive volume box and we are to delete everything outside
+          // of it. Delete the node.
+          delete_node = true;
+        } else {
+          // A non-positive volume box and we are to delete everything inside
+          // of it. Do nothing.
+        }
+      } else {
+        key_type key_size_down = tree_max_val >> depth;
+        key_type key_size_up = (tree_max_val-1) >> depth;
+
+        assert(key[0] - key_size_down <= key[0] + key_size_up);
+        assert(key[1] - key_size_down <= key[1] + key_size_up);
+        assert(key[2] - key_size_down <= key[2] + key_size_up);
+        bool inside = ((min[0] <= (key[0] - key_size_down)) && (max[0] >= (key[0] + key_size_up)) &&
+                       (min[1] <= (key[1] - key_size_down)) && (max[1] >= (key[1] + key_size_up)) &&
+                       (min[2] <= (key[2] - key_size_down)) && (max[2] >= (key[2] + key_size_up)));
+        bool outside = !((min[0] <= (key[0] + key_size_up)) && (max[0] >= (key[0] - key_size_down)) &&
+                         (min[1] <= (key[1] + key_size_up)) && (max[1] >= (key[1] - key_size_down)) &&
+                         (min[2] <= (key[2] + key_size_up)) && (max[2] >= (key[2] - key_size_down)));
+        assert(!(inside && outside));
+        if ((inside && invert) || (outside && !invert)) {
+          // Nothing to do, we are entirely out of the deletion target
+        } else if ((inside && !invert) || (outside && invert)) {
+          // The entire area is inside the deletion area.
+          delete_node = true;
+        } else if (depth < max_depth) {
+          // At this point the current, inner node is both inside and oustide
+          // the bounds (it crosses the boundary).
+          // It is not possible to be at the tree_depth unless somehow at the
+          // tree_depth we were neither inside or outside the bounding keys
+          assert(depth < tree_depth);
+          // Expand if pruned leaf.
+          if (!nodeHasChildren(node)) {
+            expandNode(node);
+          }
+
+          key_type center_offset_key = tree_max_val >> (depth + 1);
+          for (unsigned int i=0; i<8; i++) {
+            if (nodeChildExists(node, i)) {
+              OcTreeKey child_key;
+              computeChildKey(i, center_offset_key, key, child_key);
+
+              if (deleteAABBRecurs(min, max,
+                                   getNodeChild(node, i), child_key, depth + 1,
+                                   max_depth, invert, deletion_notifier)) {
+                setNodeChild(node, i, NULL);
+              }
+            }
+          }
+
+          // If we have no more children left, this inner node can be removed
+          if (!nodeHasChildren(node)) {
+            delete_node = true;
+            // prevent notification, as this is not a leaf
+            deletion_notifier = NULL;
+          } else {
+            // It should not be possible to prune this node unless there is a
+            // logic bug above, because we should have deleted at least one of
+            // our children.
+            assert(pruneNode(node) == false);
+            // Update the inner node's expiry to track the min of all children
+            node->updateOccupancyChildren();
+          }
+        }
+      }
+    }
+    if (delete_node) {
+      if (deletion_notifier) {
+        deleteNodeRecurs(node, key, depth, deletion_notifier);
+      } else {
+        deleteNodeRecurs(node);
+      }
+    }
+		return delete_node;
   }
 
   template <class NODE,class I>
