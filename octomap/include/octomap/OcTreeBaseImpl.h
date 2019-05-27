@@ -40,6 +40,7 @@
 #include <iterator>
 #include <stack>
 #include <bitset>
+#include <functional>
 
 #include "octomap_types.h"
 #include "OcTreeKey.h"
@@ -222,6 +223,44 @@ namespace octomap {
      *  Pruned nodes at level "depth" will directly be deleted as a whole.
      */
     bool deleteNode(const OcTreeKey& key, unsigned int depth = 0);
+
+    using DeletionCallback = std::function<void(const OcTreeBaseImpl<NODE, INTERFACE>* tree, const NODE* node, const OcTreeKey& key, unsigned int depth)>;
+
+    /**
+     * Delete all nodes in (or out) of the given AABB.
+     *
+     * Delete all the nodes in the given axis-aligned bounding box (AABB).
+     * This method efficiently descends the tree only visiting the nodes in
+     * (or out) of the box. If invert is set, nodes outside the box are
+     * deleted (exclusive), otherwise nodes inside or on the box are deleted
+     * (inclusive).
+     *
+     * @param min    Bottom-left corner of box (inclusive).
+     * @param max    Top-right corner of box (inclusive).
+     * @param invert If true, delete everything out of the box, otherwise delete in the box.
+     * @param deletion_notifier If set, a callback to call when a leaf node is
+     *               about to be deleted.
+     */
+    void deleteAABB(const point3d& min, const point3d& max, bool invert = false,
+                    DeletionCallback deletion_notifier = DeletionCallback());
+
+    /**
+     * Delete all nodes in (or out) of the given AABB.
+     *
+     * Delete all the nodes in the given axis-aligned bounding box (AABB).
+     * This method efficiently descends the tree only visiting the nodes in
+     * (or out) of the box. If invert is set, nodes outside the box are
+     * deleted (exclusive), otherwise nodes inside or on the box are deleted
+     * (inclusive).
+     *
+     * @param min    Bottom-left corner of box (inclusive).
+     * @param max    Top-right corner of box (inclusive).
+     * @param invert If true, delete everything out of the box, otherwise delete in the box.
+     * @param deletion_notifier If set, a callback to call when a leaf node is
+     *               about to be deleted.
+     */
+    void deleteAABB(const OcTreeKey& min, const OcTreeKey& max, bool invert = false,
+                    DeletionCallback deletion_notifier = DeletionCallback());
 
     /// Deletes the complete tree structure
     void clear();
@@ -588,6 +627,18 @@ namespace octomap {
     /// recursive call of deleteNode()
     bool deleteNodeRecurs(NODE* node, unsigned int depth, unsigned int max_depth, const OcTreeKey& key);
 
+    /// Recursively delete a node and all children, calling the deletion_notifier for every leaf node deleted.
+    void deleteNodeRecurs(NODE* node,
+                          const OcTreeKey& key,
+                          unsigned int depth,
+                          const DeletionCallback& deletion_notifier);
+
+    /// recursive call of deleteAABB(). Returns true if node has been deleted.
+    bool deleteAABBRecurs(const OcTreeKey& min, const OcTreeKey& max,
+                          NODE* node, const OcTreeKey& key, unsigned int depth,
+                          unsigned int max_depth, bool invert,
+                          const DeletionCallback& deletion_notifier);
+
     /// recursive call of prune()
     void pruneRecurs(NODE* node, unsigned int depth, unsigned int max_depth, unsigned int& num_pruned);
 
@@ -604,6 +655,10 @@ namespace octomap {
   protected:  
     void allocNodeChildren(NODE* node);
     void deleteNodeChildren(NODE* node);
+    void deleteNodeChildren(NODE* node,
+                            const OcTreeKey& key,
+                            unsigned int depth,
+                            const DeletionCallback& deletion_notifier);
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 
