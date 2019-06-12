@@ -430,22 +430,7 @@ namespace octomap {
 
     // at last level, update node, end of recursion
     else {
-      if (use_change_detection) {
-        bool occBefore = this->isNodeOccupied(node);
-        updateNodeLogOdds(node, log_odds_update);
-
-        if (node_just_created){  // new node
-          changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
-        } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
-          KeyBoolMap::iterator it = changed_keys.find(key);
-          if (it == changed_keys.end())
-            changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
-          else if (it->second == false)
-            changed_keys.erase(it);
-        }
-      } else {
-        updateNodeLogOdds(node, log_odds_update);
-      }
+      updateNodeLogOddsAndTrackChanges(node, log_odds_update, node_just_created, key, depth);
       return node;
     }
   }
@@ -494,22 +479,7 @@ namespace octomap {
 
     // at last level, update node, end of recursion
     else {
-      if (use_change_detection) {
-        bool occBefore = this->isNodeOccupied(node);
-        node->setLogOdds(log_odds_value);
-
-        if (node_just_created){  // new node
-          changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
-        } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
-          KeyBoolMap::iterator it = changed_keys.find(key);
-          if (it == changed_keys.end())
-            changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
-          else if (it->second == false)
-            changed_keys.erase(it);
-        }
-      } else {
-        node->setLogOdds(log_odds_value);
-      }
+      updateNodeLogOddsAndTrackChanges(node, log_odds_value, node_just_created, key, depth, true);
       return node;
     }
   }
@@ -1446,6 +1416,43 @@ namespace octomap {
   }
 
   template <class NODE>
+  void OccupancyOcTreeBase<NODE>::updateNodeLogOddsAndTrackChanges(NODE* node, const float& update,
+                                                                   bool node_just_created, const OcTreeKey& key,
+                                                                   unsigned int depth, bool set) {
+    if (use_change_detection || nodeValueChangeCallback) {
+      bool occBefore = this->isNodeOccupied(node);
+      float valBefore = node->getLogOdds();
+      if (set) {
+        node->setLogOdds(update);
+      } else {
+        updateNodeLogOdds(node, update);
+      }
+
+      if(node->getLogOdds() != valBefore || node_just_created) {
+        valueChangeCallbackWrapper(key, depth, node_just_created, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
+      }
+
+      if (use_change_detection) {
+        if (node_just_created){  // new node
+          changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
+        } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
+          KeyBoolMap::iterator it = changed_keys.find(key);
+          if (it == changed_keys.end())
+            changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
+          else if (it->second == false)
+            changed_keys.erase(it);
+        }
+      }
+    } else {
+      if (set) {
+        node->setLogOdds(update);
+      } else {
+        updateNodeLogOdds(node, update);
+      }
+    }
+  }
+
+  template <class NODE>
   void OccupancyOcTreeBase<NODE>::integrateHit(NODE* occupancyNode) const {
     updateNodeLogOdds(occupancyNode, this->prob_hit_log);
   }
@@ -1469,6 +1476,14 @@ namespace octomap {
       occupancyNode.setLogOdds(this->clamping_thres_max);
     else
       occupancyNode.setLogOdds(this->clamping_thres_min);
+  }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth, const bool node_just_created,
+      const float prev_full_val, const bool prev_binary_val,
+      const float curr_full_val, const bool curr_binary_val) {
+    if (nodeValueChangeCallback)
+      nodeValueChangeCallback(key, depth, node_just_created, prev_full_val, prev_binary_val, curr_full_val, curr_binary_val);
   }
 
 } // namespace

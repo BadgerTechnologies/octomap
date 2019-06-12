@@ -421,6 +421,29 @@ namespace octomap {
     void resetChangeDetection() { changed_keys.clear(); }
 
     /**
+     * Registers function to be called upon node value change.
+     * Function parameters should be:
+     * @param key
+     * @param depth
+     * @param this_tree
+     * @param prev_full_val
+     * @param prev_binary_val
+     * @param curr_full_val
+     * @param curr_binary_val
+     */
+    using NodeChangeCallback = std::function<
+        void(const OcTreeKey&, unsigned int, const bool,
+        const float, const bool, const float, const bool)>;
+    void registerValueChangeCallback(NodeChangeCallback callback) {
+        nodeValueChangeCallback = callback;
+      }
+
+    void unregisterValueChangeCallback() {
+        nodeValueChangeCallback = NodeChangeCallback();
+      }
+
+
+    /**
      * Iterator to traverse all keys of changed nodes.
      * you need to enableChangeDetection() first. Here, an OcTreeKey always
      * refers to a node at the lowest tree level (its size is the minimum tree resolution)
@@ -521,6 +544,12 @@ namespace octomap {
     virtual void integrateMiss(NODE* occupancyNode) const;
     /// update logodds value of node by adding to the current value.
     virtual void updateNodeLogOdds(NODE* occupancyNode, const float& update) const;
+    /**
+     * Update logodds value of node by adding to the current value (or if set
+     * is true, directly set the value), tracking any change if enabled.
+     **/
+    virtual void updateNodeLogOddsAndTrackChanges(NODE* node, const float& update, bool node_just_created,
+                                                  const OcTreeKey& key, unsigned int depth, bool set = false);
 
     /// converts the node to the maximum likelihood value according to the tree's parameter for "occupancy"
     virtual void nodeToMaxLikelihood(NODE* occupancyNode) const;
@@ -578,6 +607,10 @@ namespace octomap {
     
     void toMaxLikelihoodRecurs(NODE* node, unsigned int depth, unsigned int max_depth);
 
+    void valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth, const bool node_just_created,
+        const float prev_full_val, const bool prev_binary_val,
+        const float curr_full_val, const bool curr_binary_val);
+
 
   protected:
     bool use_bbx_limit;  ///< use bounding box for queries (needs to be set)?
@@ -590,6 +623,7 @@ namespace octomap {
     /// Set of leaf keys (lowest level) which changed since last resetChangeDetection
     KeyBoolMap changed_keys;
     
+    NodeChangeCallback nodeValueChangeCallback = NodeChangeCallback();
 
   };
 
