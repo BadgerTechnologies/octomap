@@ -541,7 +541,8 @@ namespace octomap {
                                              key,
                                              current_depth + 1,
                                              target_depth,
-                                             log_odds_value);
+                                             log_odds_value,
+                                             lazy_eval);
     if (!lazy_eval) {
       if (this->pruneNode(node)) {
         retval = node;
