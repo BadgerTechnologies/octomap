@@ -623,7 +623,14 @@ namespace octomap {
     if (bounds_tree != NULL && bounds_node == NULL) {
       // We are out-of-bounds.
       // Must check this first to not attempt referencing bounds_node
-    } else if (bounds_tree != NULL && bounds_tree->nodeHasChildren(bounds_node)) {
+      // Be sure to delete a newly-created node, as nothing will be added to it.
+      if (node != NULL && node_just_created) {
+        this->deleteNodeRecurs(node);
+        node = NULL;
+      }
+      return node;
+    }
+    if (bounds_tree != NULL && bounds_tree->nodeHasChildren(bounds_node)) {
       // We aren't yet in a leaf of the bounds tree, descend
       // First expand if our node is a pruned leaf.
       if (!this->nodeHasChildren(node) && !node_just_created) {

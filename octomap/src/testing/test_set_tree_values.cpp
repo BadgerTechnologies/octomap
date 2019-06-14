@@ -46,6 +46,17 @@ int main(int argc, char** argv) {
     tree.setTreeValues(&value_tree, &bounds_tree, true, true);
     EXPECT_EQ(tree.size(), 0);
     EXPECT_EQ(tree.size(), tree.calcNumNodes());
+    // Add a node to the value tree but use an empty bounds tree
+    value_tree.setNodeValue(OcTreeKey(), 1.0);
+    tree.setTreeValues(&value_tree, &bounds_tree);
+    EXPECT_EQ(tree.size(), 0);
+    EXPECT_EQ(tree.size(), tree.calcNumNodes());
+    tree.setTreeValues(&value_tree, &bounds_tree, true);
+    EXPECT_EQ(tree.size(), 0);
+    EXPECT_EQ(tree.size(), tree.calcNumNodes());
+    tree.setTreeValues(&value_tree, &bounds_tree, true, true);
+    EXPECT_EQ(tree.size(), 0);
+    EXPECT_EQ(tree.size(), tree.calcNumNodes());
 
     // Test the case of an empty tree being set to the universe (pruned node at top).
     tree.clear();
