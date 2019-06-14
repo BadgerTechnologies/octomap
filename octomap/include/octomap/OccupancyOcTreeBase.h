@@ -432,7 +432,7 @@ namespace octomap {
      * @param curr_binary_val
      */
     using NodeChangeCallback = std::function<
-        void(const OcTreeKey&, unsigned int,
+        void(const OcTreeKey&, unsigned int, const bool,
         const float, const bool, const float, const bool)>;
     void registerValueChangeCallback(NodeChangeCallback callback) {
         nodeValueChangeCallback = callback;
@@ -597,7 +597,7 @@ namespace octomap {
     
     void toMaxLikelihoodRecurs(NODE* node, unsigned int depth, unsigned int max_depth);
 
-    void valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth,
+    void valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth, const bool node_just_created,
         const float prev_full_val, const bool prev_binary_val,
         const float curr_full_val, const bool curr_binary_val);
 

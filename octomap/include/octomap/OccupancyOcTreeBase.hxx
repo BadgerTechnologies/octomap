@@ -431,7 +431,7 @@ namespace octomap {
 
         if(node->getLogOdds() != valBefore)
         {
-          valueChangeCallbackWrapper(key, depth, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
+          valueChangeCallbackWrapper(key, depth, node_just_created, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
         }
 
         if (node_just_created){  // new node
@@ -499,9 +499,9 @@ namespace octomap {
         float valBefore = node->getLogOdds();
         node->setLogOdds(log_odds_value);
 
-        if(node->getLogOdds() != valBefore)
+        if (node->getLogOdds() != valBefore || node_just_created)
         {
-          valueChangeCallbackWrapper(key, depth, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
+          valueChangeCallbackWrapper(key, depth, node_just_created, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
         }
 
         if (node_just_created){  // new node
@@ -1459,11 +1459,11 @@ namespace octomap {
   }
 
   template <class NODE>
-  void OccupancyOcTreeBase<NODE>::valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth,
+  void OccupancyOcTreeBase<NODE>::valueChangeCallbackWrapper(const OcTreeKey& key, unsigned int depth, const bool node_just_created,
       const float prev_full_val, const bool prev_binary_val,
       const float curr_full_val, const bool curr_binary_val) {
     if (nodeValueChangeCallback)
-      nodeValueChangeCallback(key, depth, prev_full_val, prev_binary_val, curr_full_val, curr_binary_val);
+      nodeValueChangeCallback(key, depth, node_just_created, prev_full_val, prev_binary_val, curr_full_val, curr_binary_val);
   }
 
 } // namespace
