@@ -202,6 +202,7 @@ namespace octomap {
     freeNode(getNodeChild(node, childIdx)); // TODO delete check if empty
     node->children[childIdx] = NULL;
 
+    deleteNodeChildrenIfNecessary(node);
     tree_size--;
     size_changed = true;
   }
@@ -221,9 +222,12 @@ namespace octomap {
   }
 
   template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::setNodeChild(NODE* node, unsigned int childIdx, NODE* child) const{
+  void OcTreeBaseImpl<NODE,I>::setNodeChild(NODE* node, unsigned int childIdx, NODE* child){
     assert((childIdx < 8) && (node->children != NULL));
     node->children[childIdx] = child;
+    if (child == NULL) {
+      deleteNodeChildrenIfNecessary(node);
+    }
   }
 
   template <class NODE,class I>
@@ -257,15 +261,8 @@ namespace octomap {
   }
 
   template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::nodeHasChildren(const NODE* node) const {
-    if (node->children == NULL)
-      return false;
-
-    for (unsigned int i = 0; i<8; i++){
-      if (node->children[i] != NULL)
-        return true;
-    }
-    return false;
+  inline bool OcTreeBaseImpl<NODE,I>::nodeHasChildren(const NODE* node) const {
+    return node->children != NULL;
   }
 
 
@@ -342,6 +339,22 @@ namespace octomap {
       }
       children_pool.free(node->children);
       node->children = NULL;
+    }
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::deleteNodeChildrenIfNecessary(NODE* node){
+    if (node->children != NULL) {
+      bool children = false;
+      for (unsigned int i=0; i<8; i++) {
+        if (node->children[i] != NULL){
+          children = true;
+        }
+      }
+      if (!children) {
+        children_pool.free(node->children);
+        node->children = NULL;
+      }
     }
   }
 
