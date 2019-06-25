@@ -628,13 +628,16 @@ namespace octomap {
     bool deleteNodeRecurs(NODE* node, unsigned int depth, unsigned int max_depth, const OcTreeKey& key);
 
     /// Recursively delete a node and all children, calling the deletion_notifier for every leaf node deleted.
-    void deleteNodeRecurs(NODE* node, const OcTreeKey& key, unsigned int depth, DeletionCallback deletion_notifier);
+    void deleteNodeRecurs(NODE* node,
+                          const OcTreeKey& key,
+                          unsigned int depth,
+                          const DeletionCallback& deletion_notifier);
 
     /// recursive call of deleteAABB(). Returns true if node has been deleted.
     bool deleteAABBRecurs(const OcTreeKey& min, const OcTreeKey& max,
                           NODE* node, const OcTreeKey& key, unsigned int depth,
                           unsigned int max_depth, bool invert,
-                          DeletionCallback deletion_notifier);
+                          const DeletionCallback& deletion_notifier);
 
     /// recursive call of prune()
     void pruneRecurs(NODE* node, unsigned int depth, unsigned int max_depth, unsigned int& num_pruned);
@@ -652,7 +655,10 @@ namespace octomap {
   protected:  
     void allocNodeChildren(NODE* node);
     void deleteNodeChildren(NODE* node);
-    void deleteNodeChildren(NODE* node, const OcTreeKey& key, unsigned int depth, DeletionCallback deletion_notifier);
+    void deleteNodeChildren(NODE* node,
+                            const OcTreeKey& key,
+                            unsigned int depth,
+                            const DeletionCallback& deletion_notifier);
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 

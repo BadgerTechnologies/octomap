@@ -308,7 +308,7 @@ namespace octomap {
 
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::deleteNodeChildren(NODE* node, const OcTreeKey& key, unsigned int depth,
-                                                  DeletionCallback deletion_notifier){
+                                                  const DeletionCallback& deletion_notifier){
     if (node->children != NULL) {
       key_type center_offset_key = tree_max_val >> (depth + 1);
       for (unsigned int i=0; i<8; i++) {
@@ -812,7 +812,7 @@ namespace octomap {
 
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::deleteNodeRecurs(NODE* node, const OcTreeKey& key, unsigned int depth,
-                                                DeletionCallback deletion_notifier){
+                                                const DeletionCallback& deletion_notifier){
     assert(node);
     assert(deletion_notifier);
 
@@ -838,8 +838,9 @@ namespace octomap {
                                                 unsigned int depth,
                                                 unsigned int max_depth,
                                                 bool invert,
-                                                DeletionCallback deletion_notifier) {
+                                                const DeletionCallback& deletion_notifier) {
     bool delete_node = false;
+    bool skip_delete_notification = false;
     if (node != NULL && depth <= tree_depth && depth <= max_depth) {
 #ifndef NDEBUG
       if (depth < tree_depth)
@@ -908,7 +909,7 @@ namespace octomap {
           if (!nodeHasChildren(node)) {
             delete_node = true;
             // prevent notification, as this is not a leaf
-            deletion_notifier = NULL;
+            skip_delete_notification = true;
           } else {
             // It should not be possible to prune this node unless there is a
             // logic bug above, because we should have deleted at least one of
@@ -921,7 +922,7 @@ namespace octomap {
       }
     }
     if (delete_node) {
-      if (deletion_notifier) {
+      if (deletion_notifier && !skip_delete_notification) {
         deleteNodeRecurs(node, key, depth, deletion_notifier);
       } else {
         deleteNodeRecurs(node);
