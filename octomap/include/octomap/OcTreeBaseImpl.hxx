@@ -197,14 +197,14 @@ namespace octomap {
   }
 
   template <class NODE,class I>
-  NODE* OcTreeBaseImpl<NODE,I>::getNodeChild(NODE* node, unsigned int childIdx) const{
+  inline NODE* OcTreeBaseImpl<NODE,I>::getNodeChild(NODE* node, unsigned int childIdx) const{
     assert((childIdx < 8) && (node->children != NULL));
     assert(node->children[childIdx] != NULL);
     return static_cast<NODE*>(node->children[childIdx]);
   }
 
   template <class NODE,class I>
-  const NODE* OcTreeBaseImpl<NODE,I>::getNodeChild(const NODE* node, unsigned int childIdx) const{
+  inline const NODE* OcTreeBaseImpl<NODE,I>::getNodeChild(const NODE* node, unsigned int childIdx) const{
     assert((childIdx < 8) && (node->children != NULL));
     assert(node->children[childIdx] != NULL);
     return static_cast<const NODE*>(node->children[childIdx]);
