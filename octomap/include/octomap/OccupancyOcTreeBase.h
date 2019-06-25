@@ -544,6 +544,9 @@ namespace octomap {
     virtual void integrateMiss(NODE* occupancyNode) const;
     /// update logodds value of node by adding to the current value.
     virtual void updateNodeLogOdds(NODE* occupancyNode, const float& update) const;
+    /// update logodds value of node by adding to the current value, tracking the change if enabled.
+    virtual void updateNodeLogOddsAndTrackChanges(NODE* node, const float& update, bool node_just_created,
+                                                  const OcTreeKey& key, unsigned int depth);
 
     /// converts the node to the maximum likelihood value according to the tree's parameter for "occupancy"
     virtual void nodeToMaxLikelihood(NODE* occupancyNode) const;
