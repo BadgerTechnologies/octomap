@@ -20,7 +20,7 @@ ADD_LIBRARY( octomap-static STATIC ${octomap_SRCS})
 SET_TARGET_PROPERTIES(octomap-static PROPERTIES OUTPUT_NAME "octomap") 
 add_dependencies(octomap-static octomath-static)
 
-TARGET_LINK_LIBRARIES(octomap octomath)
+TARGET_LINK_LIBRARIES(octomap octomath ${Boost_LIBRARIES})
 
 if(NOT EXISTS "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cmake/octomap")
   file(MAKE_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cmake/octomap")
