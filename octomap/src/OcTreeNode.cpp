@@ -73,21 +73,6 @@ namespace octomap {
     return log(mean/(1-mean));
   }
 
-  float OcTreeNode::getMaxChildLogOdds() const{
-    float max = -std::numeric_limits<float>::max();
-    
-    if (children !=NULL){
-      for (unsigned int i=0; i<8; i++) {
-        if (children[i] != NULL) {
-          float l = static_cast<OcTreeNode*>(children[i])->getLogOdds(); // TODO check if works generally
-          if (l > max)
-            max = l;
-        }
-      }
-    }
-    return max;
-  }
-
   void OcTreeNode::addValue(const float& logOdds) {
     value += logOdds;
   }
