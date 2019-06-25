@@ -77,7 +77,18 @@ namespace octomap {
     /**
      * @return maximum of children's occupancy probabilities, in log odds
      */
-    float getMaxChildLogOdds() const;
+    inline float getMaxChildLogOdds() const {
+      float max = -std::numeric_limits<float>::max();
+
+      if (children != NULL) {
+        for (unsigned int i=0; i<8; i++) {
+          if (children[i] != NULL) {
+            max = std::max(max, static_cast<OcTreeNode*>(children[i])->getLogOdds());
+          }
+        }
+      }
+      return max;
+    }
 
     /// update this node's occupancy according to its children's maximum occupancy
     inline void updateOccupancyChildren() {
