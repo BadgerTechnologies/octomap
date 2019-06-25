@@ -33,6 +33,7 @@
 
 #undef max
 #undef min
+#include <algorithm>
 #include <limits>
 
 #ifdef _OPENMP
@@ -45,7 +46,11 @@ namespace octomap {
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(double in_resolution) :
     I(), root(NULL), tree_depth(16), tree_max_val(32768),
-    resolution(in_resolution), tree_size(0)
+    resolution(in_resolution), tree_size(0),
+    // Start the pools off a bit larger than the default of 32 to keep from
+    // allocating the intial smaller regions.
+    node_pool(sizeof(NODE), 128),
+    children_pool(sizeof(NODE*)*8, 128)
   {
 
     init();
@@ -56,7 +61,11 @@ namespace octomap {
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(double in_resolution, unsigned int in_tree_depth, unsigned int in_tree_max_val) :
     I(), root(NULL), tree_depth(in_tree_depth), tree_max_val(in_tree_max_val),
-    resolution(in_resolution), tree_size(0)
+    resolution(in_resolution), tree_size(0),
+    // Start the pools off a bit larger than the default of 32 to keep from
+    // allocating the intial smaller regions.
+    node_pool(sizeof(NODE), 128),
+    children_pool(sizeof(NODE*)*8, 128)
   {
     init();
 
@@ -73,13 +82,16 @@ namespace octomap {
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(const OcTreeBaseImpl<NODE,I>& rhs) :
     root(NULL), tree_depth(rhs.tree_depth), tree_max_val(rhs.tree_max_val),
-    resolution(rhs.resolution), tree_size(rhs.tree_size)
+    resolution(rhs.resolution), tree_size(rhs.tree_size),
+    // Start the pools off big enough to hold the tree being copied.
+    node_pool(sizeof(NODE), std::max<size_t>(rhs.tree_size, 128)),
+    children_pool(sizeof(NODE*)*8, std::max<size_t>(rhs.tree_size, 128))
   {
     init();
 
     // copy nodes recursively:
     if (rhs.root)
-      root = new NODE(*(rhs.root));
+      root = cloneNodeRecurs(rhs.root);
 
   }
 
@@ -112,13 +124,17 @@ namespace octomap {
 
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::swapContent(OcTreeBaseImpl<NODE,I>& other){
-    NODE* this_root = root;
-    root = other.root;
-    other.root = this_root;
+    // With allocators inside the tree, we can not simply swap pointers.
+    // Create deep copies of both trees using the correct allocator for each
+    // tree to swap contents.
+    NODE* new_root = cloneNodeRecurs(other.root);
+    other.root = other.cloneNodeRecurs(root);
+    root = new_root;
 
     size_t this_size = this->tree_size;
     this->tree_size = other.tree_size;
     other.tree_size = this_size;
+
   }
 
   template <class NODE,class I>
@@ -176,7 +192,7 @@ namespace octomap {
       allocNodeChildren(node);
     }
     assert (node->children[childIdx] == NULL);
-    NODE* newNode = new NODE();
+    NODE* newNode = allocNode();
     node->children[childIdx] = static_cast<AbstractOcTreeNode*>(newNode);
 
     tree_size++;
@@ -189,7 +205,7 @@ namespace octomap {
   void OcTreeBaseImpl<NODE,I>::deleteNodeChild(NODE* node, unsigned int childIdx){
     assert((childIdx < 8) && (node->children != NULL));
     assert(node->children[childIdx] != NULL);
-    delete static_cast<NODE*>(node->children[childIdx]); // TODO delete check if empty
+    freeNode(getNodeChild(node, childIdx)); // TODO delete check if empty
     node->children[childIdx] = NULL;
 
     tree_size--;
@@ -285,9 +301,21 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  NODE* OcTreeBaseImpl<NODE,I>::allocNode(){
+    return new (node_pool.malloc()) NODE();
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::freeNode(NODE* node){
+    // Optimization: Node destructors do nothing of consequence, save time by
+    // not calling them
+//    node->~NODE();
+    node_pool.free(node);
+  }
+
+  template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::allocNodeChildren(NODE* node){
-    // TODO NODE*
-    node->children = new AbstractOcTreeNode*[8];
+    node->children = static_cast<AbstractOcTreeNode**>(children_pool.malloc());
     for (unsigned int i=0; i<8; i++) {
       node->children[i] = NULL;
     }
@@ -301,7 +329,7 @@ namespace octomap {
           this->deleteNodeRecurs(static_cast<NODE*>(node->children[i]));
         }
       }
-      delete[] node->children;
+      children_pool.free(node->children);
       node->children = NULL;
     }
   }
@@ -318,7 +346,7 @@ namespace octomap {
           this->deleteNodeRecurs(static_cast<NODE*>(node->children[i]), child_key, depth + 1, deletion_notifier);
         }
       }
-      delete[] node->children;
+      children_pool.free(node->children);
       node->children = NULL;
     }
   }
@@ -761,12 +789,32 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  NODE* OcTreeBaseImpl<NODE,I>::cloneNodeRecurs(NODE* node){
+    if (node == NULL)
+      return NULL;
+
+    NODE* rv = allocNode();
+
+    if (nodeHasChildren(node)) {
+      allocNodeChildren(rv);
+      for (unsigned int i=0; i<8; i++) {
+        if (nodeChildExists(node, i)){
+          setNodeChild(rv, i, cloneNodeRecurs(getNodeChild(node,i)));
+        }
+      }
+    }
+
+    rv->copyData(*node);
+    return rv;
+  }
+
+  template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::deleteNodeRecurs(NODE* node){
     assert(node);
 
     deleteNodeChildren(node);
 
-    delete node;
+    freeNode(node);
     tree_size--;
     size_changed = true;
   }
@@ -825,7 +873,7 @@ namespace octomap {
     // pointer area in an inner node but all children pointers are NULL
     deleteNodeChildren(node, key, depth, deletion_notifier);
 
-    delete node;
+    freeNode(node);
     tree_size--;
     size_changed = true;
   }
@@ -1029,7 +1077,7 @@ namespace octomap {
       return s;
     }
 
-    root = new NODE();
+    root = allocNode();
     readNodesRecurs(root, s);
 
     tree_size = calcNumNodes();  // compute number of nodes

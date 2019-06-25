@@ -276,7 +276,7 @@ namespace octomap {
 
     bool createdRoot = false;
     if (this->root == NULL){
-      this->root = new NODE();
+      this->root = this->allocNode();
       this->tree_size++;
       createdRoot = true;
     }
@@ -313,7 +313,7 @@ namespace octomap {
 
     bool createdRoot = false;
     if (this->root == NULL){
-      this->root = new NODE();
+      this->root = this->allocNode();
       this->tree_size++;
       createdRoot = true;
     }
@@ -336,7 +336,7 @@ namespace octomap {
 
     bool createdRoot = false;
     if (this->root == NULL){
-      this->root = new NODE();
+      this->root = this->allocNode();
       this->tree_size++;
       createdRoot = true;
     }
@@ -550,7 +550,7 @@ namespace octomap {
     bool created_root = false;
     if (this->root == NULL)
     {
-      this->root = new NODE();
+      this->root = this->allocNode();
       this->tree_size++;
       created_root = true;
     }
@@ -1251,7 +1251,7 @@ namespace octomap {
       return s;
     }
 
-    this->root = new NODE();
+    this->root = this->allocNode();
     this->readBinaryNode(s, this->root);
     this->size_changed = true;
     this->tree_size = OcTreeBaseImpl<NODE,AbstractOccupancyOcTree>::calcNumNodes();  // compute number of nodes

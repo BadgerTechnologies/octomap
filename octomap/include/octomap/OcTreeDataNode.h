@@ -68,10 +68,9 @@ namespace octomap {
 
     OcTreeDataNode();
     OcTreeDataNode(T initVal);
-    
-    /// Copy constructor, performs a recursive deep-copy of all children 
-    /// including node data in "value"
-    OcTreeDataNode(const OcTreeDataNode& rhs);
+
+    /// It is illegal to copy nodes, as the tree contains the allocator.
+    OcTreeDataNode(const OcTreeDataNode& rhs) = delete;
 
     /// Delete only own members. 
     /// OcTree maintains tree structure and must have deleted children already
@@ -118,8 +117,6 @@ namespace octomap {
 
 
   protected:
-    void allocChildren();
-
     /// pointer to array of children, may be NULL
     /// @note The tree class manages this pointer, the array, and the memory for it!
     /// The children of a node are always enforced to be the same type as the node

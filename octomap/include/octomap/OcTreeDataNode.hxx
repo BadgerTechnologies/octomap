@@ -48,20 +48,6 @@ namespace octomap {
   }
 
   template <typename T>
-  OcTreeDataNode<T>::OcTreeDataNode(const OcTreeDataNode<T>& rhs)
-   : children(NULL), value(rhs.value)
-  {
-    if (rhs.children != NULL){
-      allocChildren();
-      for (unsigned i = 0; i<8; ++i){
-        if (rhs.children[i] != NULL)
-          children[i] = new OcTreeDataNode<T>(*(static_cast<OcTreeDataNode<T>*>(rhs.children[i])));
-
-      }
-    }
-  }
-  
-  template <typename T>
   OcTreeDataNode<T>::~OcTreeDataNode()
   {
     // Delete only own members. OcTree maintains tree structure and must have deleted 
@@ -121,18 +107,6 @@ namespace octomap {
   std::ostream& OcTreeDataNode<T>::writeData(std::ostream &s) const{
     s.write((const char*) &value, sizeof(value));
     return s;
-  }
-
-
-  // ============================================================
-  // =  private methodes  =======================================
-  // ============================================================
-  template <typename T>
-  void OcTreeDataNode<T>::allocChildren() {
-    children = new AbstractOcTreeNode*[8];
-    for (unsigned int i=0; i<8; i++) {
-      children[i] = NULL;
-    }
   }
 
 

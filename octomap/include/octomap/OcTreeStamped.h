@@ -47,8 +47,6 @@ namespace octomap {
   public:
     OcTreeNodeStamped() : OcTreeNode(), timestamp(0) {}
 
-    OcTreeNodeStamped(const OcTreeNodeStamped& rhs) : OcTreeNode(rhs), timestamp(rhs.timestamp) {}
-
     bool operator==(const OcTreeNodeStamped& rhs) const{
       return (rhs.value == value && rhs.timestamp == timestamp);
     }
