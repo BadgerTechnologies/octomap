@@ -577,6 +577,8 @@ namespace octomap {
                                                 const OccupancyOcTreeBase<NODE>* bounds_tree,
                                                 bool maximum_only, bool delete_first,
                                                 CopyValueFunction copy_value_function){
+    octomap::OcTreeKey root_key(this->tree_max_val, this->tree_max_val, this->tree_max_val);
+
     // delete_first implies maximum_only = false.
     if (delete_first)
       maximum_only = false;
@@ -601,6 +603,8 @@ namespace octomap {
 
     this->root = setTreeValuesRecurs(this->root,
                                      created_root,
+                                     root_key,
+                                     0,
                                      value_tree,
                                      bounds_tree,
                                      value_node,
@@ -613,6 +617,8 @@ namespace octomap {
   template <class NODE>
   NODE* OccupancyOcTreeBase<NODE>::setTreeValuesRecurs(NODE* node,
                                                        bool node_just_created,
+                                                       const OcTreeKey& key,
+                                                       unsigned int depth,
                                                        const OccupancyOcTreeBase<NODE>* value_tree,
                                                        const OccupancyOcTreeBase<NODE>* bounds_tree,
                                                        const NODE* value_node,
@@ -668,8 +674,13 @@ namespace octomap {
             // set to delete_first and the value tree is empty here. In such a
             // case, there is no point in creating nodes just to delete them.
             if (this->nodeChildExists(node, i)) {
+              key_type center_offset_key = this->tree_max_val >> (depth + 1);
+              OcTreeKey child_key;
+              computeChildKey(i, center_offset_key, key, child_key);
               NODE* rv = setTreeValuesRecurs(this->getNodeChild(node, i),
                                              created_node,
+                                             child_key,
+                                             depth + 1,
                                              value_tree,
                                              bounds_tree,
                                              value_child,
@@ -705,7 +716,7 @@ namespace octomap {
           node_just_created = true;
         }
       }
-      setTreeValuesRecurs(node, node_just_created, value_tree, value_node, maximum_only, copy_value_function);
+      setTreeValuesRecurs(node, node_just_created, key, depth, value_tree, value_node, maximum_only, copy_value_function);
     }
     if (node != NULL && node_just_created && !this->nodeHasChildren(node) && value_node == NULL) {
       // We are not a leaf node and didn't end up with any children after being newly created. Delete.
@@ -727,12 +738,16 @@ namespace octomap {
   template <class NODE>
   void OccupancyOcTreeBase<NODE>::setTreeValuesRecurs(NODE* node,
                                                       bool node_just_created,
+                                                      const OcTreeKey& key,
+                                                      unsigned int depth,
                                                       const OccupancyOcTreeBase<NODE>* value_tree,
                                                       const NODE* value_node,
                                                       bool maximum_only,
                                                       const CopyValueFunction& copy_value_function){
     if (node == NULL || value_tree == NULL || value_node == NULL)
       return;
+    key_type center_offset_key = this->tree_max_val >> (depth + 1);
+    OcTreeKey child_key;
     if (!value_tree->nodeHasChildren(value_node)) {
       // The value node has no children (its a leaf)
       if (!this->nodeHasChildren(node)) {
@@ -743,7 +758,7 @@ namespace octomap {
           // node is a higher log odds than this node. Otherwise, there is
           // nothing to set.
           if (copy_value_function) {
-            copy_value_function(value_node, node);
+            copy_value_function(value_node, node, node_just_created, key, depth);
           } else {
             node->copyData(*value_node);
           }
@@ -755,7 +770,7 @@ namespace octomap {
           // and copy the value node's data into our node.
           this->deleteNodeChildren(node);
           if (copy_value_function) {
-            copy_value_function(value_node, node);
+            copy_value_function(value_node, node, node_just_created, key, depth);
           } else {
             node->copyData(*value_node);
           }
@@ -771,8 +786,11 @@ namespace octomap {
               // In this case the value node is already at a leaf.
               // This value node leaf is OK to pass down the recursion, as all
               // we need is its value.
+              computeChildKey(i, center_offset_key, key, child_key);
               setTreeValuesRecurs(this->getNodeChild(node, i),
                                   false,
+                                  child_key,
+                                  depth + 1,
                                   value_tree,
                                   value_node,
                                   true,
@@ -784,7 +802,7 @@ namespace octomap {
               this->createNodeChild(node, i);
               NODE* child_node = this->getNodeChild(node, i);
               if (copy_value_function) {
-                copy_value_function(value_node, child_node);
+                copy_value_function(value_node, child_node, node_just_created, key, depth);
               } else {
                 child_node->copyData(*value_node);
               }
@@ -807,8 +825,11 @@ namespace octomap {
               created_node = true;
             }
           }
+          computeChildKey(i, center_offset_key, key, child_key);
           setTreeValuesRecurs(this->getNodeChild(node, i),
                               created_node,
+                              child_key,
+                              depth + 1,
                               value_tree,
                               value_tree->getNodeChild(value_node, i),
                               maximum_only,

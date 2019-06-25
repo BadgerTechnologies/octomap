@@ -524,7 +524,8 @@ int main(int argc, char** argv) {
 
     treep.reset(new OcTree(tree));
     treep->setTreeValues(&tree, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     EXPECT_EQ(treep->size(), 32);
     EXPECT_EQ(treep->size(), treep->calcNumNodes());
 
@@ -540,11 +541,14 @@ int main(int argc, char** argv) {
 
     treep->clear();
     treep->setTreeValues(&tree, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     treep->setTreeValues(&value_tree, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     treep->setTreeValues(&value_tree2, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     EXPECT_EQ(treep->size(), 57);
     EXPECT_EQ(treep->size(), treep->calcNumNodes());
 
@@ -585,11 +589,14 @@ int main(int argc, char** argv) {
 
     treep->clear();
     treep->setTreeValues(&tree, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     treep->setTreeValues(&value_tree, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     treep->setTreeValues(&value_tree2, false, false,
-                         [](const OcTree::NodeType*, OcTree::NodeType* node){node->setLogOdds(1.0);});
+                         [](const OcTree::NodeType*, OcTree::NodeType* node, bool, const OcTreeKey&, unsigned int)
+                         {node->setLogOdds(1.0);});
     EXPECT_EQ(treep->size(), 13);
     EXPECT_EQ(treep->size(), treep->calcNumNodes());
 

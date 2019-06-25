@@ -147,7 +147,7 @@ namespace octomap {
      virtual void insertPointCloudRays(const Pointcloud& scan, const point3d& sensor_origin, double maxrange = -1., bool lazy_eval = false);
 
      /** Used to copy values in setTreeValues */
-     using CopyValueFunction = std::function<void(const NODE*, NODE*)>;
+     using CopyValueFunction = std::function<void(const NODE*, NODE*, bool, const OcTreeKey&, unsigned int)>;
 
      /**
       * Set this tree's values from another tree.
@@ -577,6 +577,8 @@ namespace octomap {
     // recursive update values from other tree with bounds
     NODE* setTreeValuesRecurs(NODE* node,
                               bool node_just_created,
+                              const OcTreeKey& key,
+                              unsigned int depth,
                               const OccupancyOcTreeBase<NODE>* value_tree,
                               const OccupancyOcTreeBase<NODE>* bounds_tree,
                               const NODE* value_node,
@@ -588,6 +590,8 @@ namespace octomap {
     // recursive update values from other tree
     void setTreeValuesRecurs(NODE* node,
                              bool node_just_created,
+                             const OcTreeKey& key,
+                             unsigned int depth,
                              const OccupancyOcTreeBase<NODE>* value_tree,
                              const NODE* value_node,
                              bool maximum_only,
