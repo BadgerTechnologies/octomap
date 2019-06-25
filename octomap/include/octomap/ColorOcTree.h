@@ -66,8 +66,6 @@ namespace octomap {
   public:
     ColorOcTreeNode() : OcTreeNode() {}
 
-    ColorOcTreeNode(const ColorOcTreeNode& rhs) : OcTreeNode(rhs), color(rhs.color) {}
-
     bool operator==(const ColorOcTreeNode& rhs) const{
       return (rhs.value == value && rhs.color == color);
     }
