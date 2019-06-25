@@ -238,7 +238,7 @@ namespace octomap {
   }
 
   template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::nodeChildExists(const NODE* node, unsigned int childIdx) const{
+  inline bool OcTreeBaseImpl<NODE,I>::nodeChildExists(const NODE* node, unsigned int childIdx) const{
     assert(childIdx < 8);
     if ((node->children != NULL) && (node->children[childIdx] != NULL))
       return true;
