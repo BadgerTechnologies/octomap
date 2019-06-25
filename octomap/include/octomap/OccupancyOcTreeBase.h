@@ -583,7 +583,7 @@ namespace octomap {
                               const NODE* bounds_node,
                               bool maximum_only,
                               bool delete_first,
-                              CopyValueFunction copy_value_function);
+                              const CopyValueFunction& copy_value_function);
 
     // recursive update values from other tree
     void setTreeValuesRecurs(NODE* node,
@@ -591,7 +591,7 @@ namespace octomap {
                              const OccupancyOcTreeBase<NODE>* value_tree,
                              const NODE* value_node,
                              bool maximum_only,
-                             CopyValueFunction copy_value_function);
+                             const CopyValueFunction& copy_value_function);
 
     void updateInnerOccupancyRecurs(NODE* node, unsigned int depth);
     

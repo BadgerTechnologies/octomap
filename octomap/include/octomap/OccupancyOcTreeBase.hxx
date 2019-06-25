@@ -619,7 +619,7 @@ namespace octomap {
                                                        const NODE* bounds_node,
                                                        bool maximum_only,
                                                        bool delete_first,
-                                                       CopyValueFunction copy_value_function){
+                                                       const CopyValueFunction& copy_value_function){
     if (bounds_tree != NULL && bounds_node == NULL) {
       // We are out-of-bounds.
       // Must check this first to not attempt referencing bounds_node
@@ -730,7 +730,7 @@ namespace octomap {
                                                       const OccupancyOcTreeBase<NODE>* value_tree,
                                                       const NODE* value_node,
                                                       bool maximum_only,
-                                                      CopyValueFunction copy_value_function){
+                                                      const CopyValueFunction& copy_value_function){
     if (node == NULL || value_tree == NULL || value_node == NULL)
       return;
     if (!value_tree->nodeHasChildren(value_node)) {
