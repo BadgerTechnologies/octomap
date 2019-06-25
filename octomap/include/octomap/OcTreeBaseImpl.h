@@ -42,6 +42,8 @@
 #include <bitset>
 #include <functional>
 
+#include <boost/pool/pool.hpp>
+
 #include "octomap_types.h"
 #include "OcTreeKey.h"
 #include "ScanGraph.h"
@@ -619,7 +621,10 @@ namespace octomap {
     
     /// recursive call of writeData()
     std::ostream& writeNodesRecurs(const NODE*, std::ostream &s) const;
-    
+
+    /// Recusively clone a node and all children.
+    NODE* cloneNodeRecurs(NODE* node);
+
     /// Recursively delete a node and all children. Deallocates memory
     /// but does NOT set the node ptr to NULL.
     void deleteNodeRecurs(NODE* node);
@@ -652,13 +657,16 @@ namespace octomap {
     /// (const-parameters can't be changed) -  use the copy constructor instead.
     OcTreeBaseImpl<NODE,INTERFACE>& operator=(const OcTreeBaseImpl<NODE,INTERFACE>&);
 
-  protected:  
+  protected:
+    NODE* allocNode();
+    void freeNode(NODE* node);
     void allocNodeChildren(NODE* node);
     void deleteNodeChildren(NODE* node);
     void deleteNodeChildren(NODE* node,
                             const OcTreeKey& key,
                             unsigned int depth,
                             const DeletionCallback& deletion_notifier);
+    void deleteNodeChildrenIfNecessary(NODE* node);
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 
@@ -686,7 +694,8 @@ namespace octomap {
     const leaf_bbx_iterator leaf_iterator_bbx_end;
     const tree_iterator tree_iterator_end;
 
-
+    boost::pool<> node_pool;
+    boost::pool<> children_pool;
   };
 
 }
