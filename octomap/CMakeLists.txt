@@ -154,7 +154,7 @@ include(InstallPkgConfigFile)
 install_pkg_config_file(octomap
     CFLAGS
     LIBS -loctomap -loctomath
-    REQUIRES Boost
+    REQUIRES
     VERSION ${OCTOMAP_VERSION})
 
 # Documentation 
