@@ -211,6 +211,20 @@ int main(int argc, char** argv) {
     EXPECT_TRUE(node);
     EXPECT_EQ(-1.0, node->getLogOdds());
 
+    // Test having a pruned inner node in our tree, a sub-node in the value
+    // tree while using delete first.
+    tree.clear();
+    value_tree.clear();
+    bounds_tree.clear();
+    tree.setNodeValueAtDepth(singleKey, 15, 1.0);
+    value_tree.setNodeValueAtDepth(singleKey, 16, 1.0);
+    bounds_tree.setNodeValueAtDepth(singleKey, 15, 1.0);
+    EXPECT_EQ(tree.size(), 16);
+    EXPECT_EQ(value_tree.size(), 17);
+    EXPECT_EQ(bounds_tree.size(), 16);
+    tree.setTreeValues(&value_tree, &bounds_tree, false, true);
+    EXPECT_EQ(tree.size(), 17);
+
     // Test no value tree with a non-overlapping bounds tree with delete first set.
     tree.clear();
     bounds_tree.clear();

@@ -686,8 +686,8 @@ namespace octomap {
           // There are no values to copy over, delete this node completely.
           this->deleteNodeRecurs(node);
           node = NULL;
-        } else if (this->nodeHasChildren(node)) {
-          // There is at least some value to copy over and we have children.
+        } else {
+          // There is at least some value to copy over.
           // Delete all our children so they can be replaced by the values.
           this->deleteNodeChildren(node);
           // Be sure to set node_just_created as this indicates that the given
