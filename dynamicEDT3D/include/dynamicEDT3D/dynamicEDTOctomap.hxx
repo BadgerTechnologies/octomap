@@ -213,7 +213,12 @@ void DynamicEDTOctomapBase<TREE>::getDistanceAndClosestObstacle(const octomap::p
 	int x,y,z;
 	worldToMap(p, x, y, z);
 	if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
-		dataCell c= data[x][y][z];
+		dataCell c;
+		try {
+			c = data.at(x).at(y).at(z);
+		}
+		catch (const std::out_of_range&) {
+		}
 
 		distance = c.dist*treeResolution;
 		if(c.obstX != invalidObstData){
@@ -231,7 +236,13 @@ void DynamicEDTOctomapBase<TREE>::getDistanceAndClosestObstacle_unsafe(const oct
 	int x,y,z;
 	worldToMap(p, x, y, z);
 
-	dataCell c= data[x][y][z];
+	dataCell c;
+	try {
+		c = data.at(x).at(y).at(z);
+	}
+	catch (const std::out_of_range&) {
+		return;
+	}
 
 	distance = c.dist*treeResolution;
 	if(c.obstX != invalidObstData){
@@ -246,7 +257,14 @@ float DynamicEDTOctomapBase<TREE>::getDistance(const octomap::point3d& p) const 
   int x,y,z;
   worldToMap(p, x, y, z);
   if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
-      return data[x][y][z].dist*treeResolution;
+	  dataCell c;
+	  try {
+		 c = data.at(x).at(y).at(z);
+	  }
+	  catch (const std::out_of_range&) {
+		 return distanceValue_Error;
+	  }
+      return c.dist*treeResolution;
   } else {
       return distanceValue_Error;
   }
@@ -256,7 +274,13 @@ template <class TREE>
 float DynamicEDTOctomapBase<TREE>::getDistance_unsafe(const octomap::point3d& p) const {
   int x,y,z;
   worldToMap(p, x, y, z);
-  return data[x][y][z].dist*treeResolution;
+  dataCell c;
+  try {
+    c = data.at(x).at(y).at(z);
+  }
+  catch (const std::out_of_range&) {
+  }
+  return c.dist*treeResolution;
 }
 
 template <class TREE>
@@ -266,7 +290,13 @@ float DynamicEDTOctomapBase<TREE>::getDistance(const octomap::OcTreeKey& k) cons
   int z = k[2] + offsetZ;
 
   if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
-      return data[x][y][z].dist*treeResolution;
+	  dataCell c;
+	  try {
+	    c = data.at(x).at(y).at(z);
+	  }
+	  catch (const std::out_of_range&) {
+	  }
+      return c.dist*treeResolution;
   } else {
       return distanceValue_Error;
   }
@@ -277,8 +307,13 @@ float DynamicEDTOctomapBase<TREE>::getDistance_unsafe(const octomap::OcTreeKey& 
   int x = k[0] + offsetX;
   int y = k[1] + offsetY;
   int z = k[2] + offsetZ;
-
-  return data[x][y][z].dist*treeResolution;
+  dataCell c;
+  try {
+    c = data.at(x).at(y).at(z);
+  }
+  catch (const std::out_of_range&) {
+  }
+  return c.dist*treeResolution;
 }
 
 template <class TREE>
@@ -286,7 +321,13 @@ int DynamicEDTOctomapBase<TREE>::getSquaredDistanceInCells(const octomap::point3
   int x,y,z;
   worldToMap(p, x, y, z);
   if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
-    return data[x][y][z].sqdist;
+	dataCell c;
+	try {
+	  c = data.at(x).at(y).at(z);
+	}
+	catch (const std::out_of_range&) {
+	}
+    return c.sqdist;
   } else {
     return distanceInCellsValue_Error;
   }
@@ -296,7 +337,13 @@ template <class TREE>
 int DynamicEDTOctomapBase<TREE>::getSquaredDistanceInCells_unsafe(const octomap::point3d& p) const {
   int x,y,z;
   worldToMap(p, x, y, z);
-  return data[x][y][z].sqdist;
+  dataCell c;
+  try {
+    c = data.at(x).at(y).at(z);
+  }
+  catch (const std::out_of_range&) {
+  }
+  return c.sqdist;
 }
 
 template <class TREE>

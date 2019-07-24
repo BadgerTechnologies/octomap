@@ -40,6 +40,7 @@
 
 #include <limits.h>
 #include <queue>
+#include <unordered_map>
 
 #include "bucketedqueue.h"
 
@@ -134,12 +135,16 @@ protected:
   int sizeYm1;
   int sizeZm1;
 
-  dataCell*** data;
+  typedef std::unordered_map<int,dataCell> line_map;
+  typedef std::unordered_map<int,line_map> plane_map;
+  typedef std::unordered_map<int,plane_map> cube_map;
+
+  cube_map data;
   bool*** gridMap;
 
   // parameters
   int padding;
-  double doubleThreshold;
+  //double doubleThreshold;
 
   double sqrt2;
   double maxDist;

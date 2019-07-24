@@ -2,6 +2,8 @@ SET( dynamicEDT3D_SRCS
    dynamicEDT3D.cpp
    )
 
+set(CMAKE_CXX_STANDARD 11)
+
 add_library(dynamicedt3d SHARED ${dynamicEDT3D_SRCS})
 set_target_properties(dynamicedt3d PROPERTIES
   VERSION ${DYNAMICEDT3D_VERSION}

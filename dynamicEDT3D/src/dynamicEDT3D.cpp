@@ -110,21 +110,11 @@ DynamicEDT3D::DynamicEDT3D(int _maxdist_squared) {
 	sqrt2 = sqrt(2.0);
 	maxDist_squared = _maxdist_squared;
 	maxDist = sqrt((double) maxDist_squared);
-	data = NULL;
+	//data = nullptr;
 	gridMap = NULL;
 }
 
 DynamicEDT3D::~DynamicEDT3D() {
-	if (data) {
-		for (int x=0; x<sizeX; x++){
-			for (int y=0; y<sizeY; y++)
-				delete[] data[x][y];
-
-			delete[] data[x];
-		}
-		delete[] data;
-	}
-
 	if (gridMap) {
 		for (int x=0; x<sizeX; x++){
 			for (int y=0; y<sizeY; y++)
@@ -144,23 +134,6 @@ void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool init
 	sizeXm1 = sizeX-1;
 	sizeYm1 = sizeY-1;
 	sizeZm1 = sizeZ-1;
-
-	if (data) {
-		for (int x=0; x<sizeX; x++){
-			for (int y=0; y<sizeY; y++)
-				delete[] data[x][y];
-
-			delete[] data[x];
-		}
-		delete[] data;
-	}
-
-	data = new dataCell**[sizeX];
-	for (int x=0; x<sizeX; x++){
-		data[x] = new dataCell*[sizeY];
-		for(int y=0; y<sizeY; y++)
-			data[x][y] = new dataCell[sizeZ];
-	}
 
 	if (initGridMap) {
 		if (gridMap) {
@@ -520,14 +493,25 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 
 float DynamicEDT3D::getDistance( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-		return data[x][y][z].dist;
+		try {
+			return data.at(x).at(y).at(z).dist;
+		}
+		catch (const std::out_of_range&) {
+			return distanceValue_Error;
+		}
 	}
 	else return distanceValue_Error;
 }
 
 INTPOINT3D DynamicEDT3D::getClosestObstacle( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-	  dataCell c = data[x][y][z];
+	  dataCell c;
+	  try {
+		c = data.at(x).at(y).at(z);
+	  }
+	  catch (const std::out_of_range&) {
+		return INTPOINT3D(invalidObstData, invalidObstData, invalidObstData);
+	  }
 	  return INTPOINT3D(c.obstX, c.obstY, c.obstZ);
 	}
 	else return INTPOINT3D(invalidObstData, invalidObstData, invalidObstData);
@@ -535,7 +519,12 @@ INTPOINT3D DynamicEDT3D::getClosestObstacle( int x, int y, int z ) const {
 
 int DynamicEDT3D::getSQCellDistance( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-		return data[x][y][z].sqdist;
+		try {
+			return data.at(x).at(y).at(z).sqdist;
+		}
+		catch (const std::out_of_range&) {
+			return distanceInCellsValue_Error;
+		}
 	}
 	else return distanceInCellsValue_Error;
 }
@@ -582,7 +571,7 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 }
 
 bool DynamicEDT3D::isOccupied(int x, int y, int z) const {
-	dataCell c = data[x][y][z];
+	dataCell c = data.at(x).at(y).at(z);
 	return (c.obstX==x && c.obstY==y && c.obstZ==z);
 }
 
