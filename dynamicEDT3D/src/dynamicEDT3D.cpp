@@ -110,8 +110,24 @@ DynamicEDT3D::DynamicEDT3D(int _maxdist_squared) {
 	sqrt2 = sqrt(2.0);
 	maxDist_squared = _maxdist_squared;
 	maxDist = sqrt((double) maxDist_squared);
-	//data = nullptr;
 	gridMap = NULL;
+	sizeY = 0;
+	sizeX = 0;
+	sizeZ = 0;
+	sizeXm1 = 0;
+	sizeYm1 = 0;
+	sizeZm1 = 0;
+	doubleThreshold = 0;
+	padding = 0;
+
+	invalidDataCell.dist = maxDist;
+	invalidDataCell.sqdist = maxDist_squared;
+	invalidDataCell.obstX = invalidObstData;
+	invalidDataCell.obstY = invalidObstData;
+	invalidDataCell.obstZ = invalidObstData;
+	invalidDataCell.queueing = fwNotQueued;
+	invalidDataCell.needsRaise = false;
+
 }
 
 DynamicEDT3D::~DynamicEDT3D() {
@@ -154,23 +170,6 @@ void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool init
 		}
 	}
 
-	dataCell c;
-	c.dist = maxDist;
-	c.sqdist = maxDist_squared;
-	c.obstX = invalidObstData;
-	c.obstY = invalidObstData;
-	c.obstZ = invalidObstData;
-	c.queueing = fwNotQueued;
-	c.needsRaise = false;
-
-	for (int x=0; x<sizeX; x++){
-		for (int y=0; y<sizeY; y++){
-			for (int z=0; z<sizeZ; z++){
-				data[x][y][z] = c;
-			}
-		}
-	}
-
 	if (initGridMap) {
 		for (int x=0; x<sizeX; x++)
 			for (int y=0; y<sizeY; y++)
@@ -187,7 +186,7 @@ void DynamicEDT3D::initializeMap(int _sizeX, int _sizeY, int _sizeZ, bool*** _gr
 		for (int y=0; y<sizeY; y++) {
 			for (int z=0; z<sizeZ; z++) {
 				if (gridMap[x][y][z]) {
-					dataCell c = data[x][y][z];
+					dataCell c = getCell(x,y,z);
 					if (!isOccupied(x,y,z,c)) {
 
 						bool isSurrounded = true;
@@ -236,7 +235,7 @@ void DynamicEDT3D::clearCell(int x, int y, int z) {
 }
 
 void DynamicEDT3D::setObstacle(int x, int y, int z) {
-	dataCell c = data[x][y][z];
+	dataCell c = getCell(x,y,z);
 	if(isOccupied(x,y,z,c)) return;
 
 	addList.push_back(INTPOINT3D(x,y,z));
@@ -247,7 +246,7 @@ void DynamicEDT3D::setObstacle(int x, int y, int z) {
 }
 
 void DynamicEDT3D::removeObstacle(int x, int y, int z) {
-	dataCell c = data[x][y][z];
+	dataCell c = getCell(x,y,z);
 	if(isOccupied(x,y,z,c) == false) return;
 
 	removeList.push_back(INTPOINT3D(x,y,z));
@@ -291,7 +290,7 @@ void DynamicEDT3D::update(bool updateRealDist) {
 			int x = p.x;
 			int y = p.y;
 			int z = p.z;
-			dataCell c = data[x][y][z];
+			dataCell c = getCell(x,y,z);
 
 			if(c.queueing==fwProcessed) continue;
 
@@ -300,7 +299,7 @@ void DynamicEDT3D::update(bool updateRealDist) {
 				raiseCell(p, c, updateRealDist);
 				data[x][y][z] = c;
 			}
-			else if (c.obstX != invalidObstData && isOccupied(c.obstX,c.obstY,c.obstZ,data[c.obstX][c.obstY][c.obstZ])) {
+			else if (c.obstX != invalidObstData && isOccupied(c.obstX,c.obstY,c.obstZ,getCell(c.obstX,c.obstY,c.obstZ))) {
 				// LOWER
 				propagateCell(p, c, updateRealDist);
 				data[x][y][z] = c;
@@ -333,9 +332,9 @@ void DynamicEDT3D::raiseCell(INTPOINT3D &p, dataCell &c, bool updateRealDist){
 }
 
 void DynamicEDT3D::inspectCellRaise(int &nx, int &ny, int &nz, bool updateRealDist){
-	dataCell nc = data[nx][ny][nz];
+	dataCell nc = getCell(nx,ny,nz);
 	if (nc.obstX!=invalidObstData && !nc.needsRaise) {
-		if(!isOccupied(nc.obstX,nc.obstY,nc.obstZ,data[nc.obstX][nc.obstY][nc.obstZ])) {
+		if(!isOccupied(nc.obstX,nc.obstY,nc.obstZ,getCell(nc.obstX,nc.obstY,nc.obstZ))) {
 			open.push(nc.sqdist, INTPOINT3D(nx,ny,nz));
 			nc.queueing = fwQueued;
 			nc.needsRaise = true;
@@ -451,7 +450,7 @@ void DynamicEDT3D::propagateCell(INTPOINT3D &p, dataCell &c, bool updateRealDist
 }
 
 void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, bool updateRealDist){
-	dataCell nc = data[nx][ny][nz];
+	dataCell nc = getCell(nx,ny,nz);
 	if(!nc.needsRaise) {
 		int distx = nx-c.obstX;
 		int disty = ny-c.obstY;
@@ -467,7 +466,7 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 			}
 			else {
 				//the neighbor has no valid source obstacle but the raise wave has not yet reached it
-				dataCell tmp = data[nc.obstX][nc.obstY][nc.obstZ];
+				dataCell tmp = getCell(nc.obstX,nc.obstY,nc.obstZ);
 
 				if((tmp.obstX==nc.obstX && tmp.obstY==nc.obstY && tmp.obstZ==nc.obstZ)==false)
 					overwrite = true;
@@ -493,25 +492,14 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 
 float DynamicEDT3D::getDistance( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-		try {
-			return data.at(x).at(y).at(z).dist;
-		}
-		catch (const std::out_of_range&) {
-			return distanceValue_Error;
-		}
+		return getCell(x,y,z).dist;
 	}
 	else return distanceValue_Error;
 }
 
 INTPOINT3D DynamicEDT3D::getClosestObstacle( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-	  dataCell c;
-	  try {
-		c = data.at(x).at(y).at(z);
-	  }
-	  catch (const std::out_of_range&) {
-		return INTPOINT3D(invalidObstData, invalidObstData, invalidObstData);
-	  }
+	  dataCell c = getCell(x, y, z);
 	  return INTPOINT3D(c.obstX, c.obstY, c.obstZ);
 	}
 	else return INTPOINT3D(invalidObstData, invalidObstData, invalidObstData);
@@ -519,12 +507,7 @@ INTPOINT3D DynamicEDT3D::getClosestObstacle( int x, int y, int z ) const {
 
 int DynamicEDT3D::getSQCellDistance( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
-		try {
-			return data.at(x).at(y).at(z).sqdist;
-		}
-		catch (const std::out_of_range&) {
-			return distanceInCellsValue_Error;
-		}
+		return getCell(x, y, z).sqdist;
 	}
 	else return distanceInCellsValue_Error;
 }
@@ -537,7 +520,7 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 		int x = p.x;
 		int y = p.y;
 		int z = p.z;
-		dataCell c = data[x][y][z];
+		dataCell c = getCell(x,y,z);
 
 		if(c.queueing != fwQueued){
 			if (updateRealDist) c.dist = 0;
@@ -557,7 +540,7 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 		int x = p.x;
 		int y = p.y;
 		int z = p.z;
-		dataCell c = data[x][y][z];
+		dataCell c = getCell(x,y,z);
 
 		if (isOccupied(x,y,z,c)==true) continue; // obstacle was removed and reinserted
 		open.push(0, INTPOINT3D(x,y,z));
@@ -571,10 +554,19 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 }
 
 bool DynamicEDT3D::isOccupied(int x, int y, int z) const {
-	dataCell c = data.at(x).at(y).at(z);
+	dataCell c = getCell(x,y,z);
 	return (c.obstX==x && c.obstY==y && c.obstZ==z);
 }
 
-bool DynamicEDT3D::isOccupied(int &x, int &y, int &z, dataCell &c) { 
+bool DynamicEDT3D::isOccupied(int &x, int &y, int &z, const dataCell &c) {
 	return (c.obstX==x && c.obstY==y && c.obstZ==z);
+}
+
+DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
+	try {
+		return data.at(x).at(y).at(z);
+	}
+	catch (const std::out_of_range&) {
+		return invalidDataCell;
+	}
 }

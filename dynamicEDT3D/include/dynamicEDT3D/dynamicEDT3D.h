@@ -92,7 +92,7 @@ public:
   static int distanceInCellsValue_Error;
 
 protected: 
-  struct dataCell {
+  typedef struct dataCell {
     float dist;
     int obstX;
     int obstY;
@@ -100,7 +100,10 @@ protected:
     int sqdist;
     char queueing;
     bool needsRaise;
-  };
+  } dataCell;
+
+  dataCell invalidDataCell;
+  dataCell getCell(int &x, int &y, int &z) const;
 
   typedef enum {free=0, occupied=1} State;
   typedef enum {fwNotQueued=1, fwQueued=2, fwProcessed=3, bwQueued=4, bwProcessed=1} QueueingState;
@@ -117,7 +120,7 @@ protected:
 private:
   void commitAndColorize(bool updateRealDist=true);
 
-  inline bool isOccupied(int &x, int &y, int &z, dataCell &c);
+  inline bool isOccupied(int &x, int &y, int &z, const dataCell &c);
 
   // queues
   BucketPrioQueue<INTPOINT3D> open;
@@ -140,11 +143,12 @@ protected:
   typedef std::unordered_map<int,plane_map> cube_map;
 
   cube_map data;
+
   bool*** gridMap;
 
   // parameters
   int padding;
-  //double doubleThreshold;
+  double doubleThreshold;
 
   double sqrt2;
   double maxDist;
