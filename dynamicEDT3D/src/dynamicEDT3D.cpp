@@ -252,13 +252,8 @@ void DynamicEDT3D::setObstacle(int x, int y, int z) {
 void DynamicEDT3D::removeObstacle(int x, int y, int z) {
 	dataCell c = getCell(x,y,z);
 	if(isOccupied(x,y,z,c) == false) return;
-
 	removeList.push_back(INTPOINT3D(x,y,z));
-	c.obstX = invalidObstData;
-	c.obstY  = invalidObstData;
-	c.obstZ  = invalidObstData;
-	c.queueing = bwQueued;
-	setCell(x,y,z,c);
+	setCell(x,y,z,invalidDataCell);
 }
 
 void DynamicEDT3D::exchangeObstacles(std::vector<INTPOINT3D> points) {
@@ -576,5 +571,10 @@ DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
 }
 
 void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
-	data[INTPOINT3D(x,y,z)] = cell;
+	if( cell == invalidDataCell ) {
+		data.erase(INTPOINT3D(x,y,z));
+	}
+	else {
+		data[INTPOINT3D(x,y,z)] = cell;
+	}
 }
