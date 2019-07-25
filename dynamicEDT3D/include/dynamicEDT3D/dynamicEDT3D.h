@@ -53,9 +53,12 @@ public:
   ~DynamicEDT3D();
 
   //! Initialization with an empty map
-  void initializeEmpty(int _sizeX, int _sizeY, int sizeZ, bool initGridMap=true);
+  void initializeEmpty(int _sizeX, int _sizeY, int sizeZ, bool initGridMap=true, unsigned int num_points_occupied=0);
+  void initializeEmpty(int _sizeX, int _sizeY, int sizeZ, bool initGridMap=true){
+	  initializeEmpty(_sizeX, _sizeY, sizeZ, initGridMap, 0);
+  }
   //! Initialization with a given binary map (false==free, true==occupied)
-  void initializeMap(int _sizeX, int _sizeY, int sizeZ, bool*** _gridMap);
+  void initializeMap(int _sizeX, int _sizeY, int sizeZ, bool*** _gridMap, unsigned int num_points_occupied=0);
 
   //! add an obstacle at the specified cell coordinate
   void occupyCell(int x, int y, int z);
@@ -104,6 +107,7 @@ protected:
 
   dataCell invalidDataCell;
   dataCell getCell(int &x, int &y, int &z) const;
+  void     setCell(int &x, int &y, int &z, const dataCell &cell);
 
   typedef enum {free=0, occupied=1} State;
   typedef enum {fwNotQueued=1, fwQueued=2, fwProcessed=3, bwQueued=4, bwProcessed=1} QueueingState;
@@ -129,6 +133,19 @@ private:
   std::vector<INTPOINT3D> addList;
   std::vector<INTPOINT3D> lastObstacles;
 
+  // Taken from octomap and made to use 3d points
+  struct KeyHash{
+    size_t operator()(const INTPOINT3D &p) const{
+      // a simple hashing function
+	// explicit casts to size_t to operate on the complete range
+	// constanst will be promoted according to C++ standard
+      return static_cast<size_t>(p.x)
+        + 1447*static_cast<size_t>(p.y)
+        + 345637*static_cast<size_t>(p.z);
+    }
+  };
+  std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
+
   // maps
 protected:
   int sizeX;
@@ -138,11 +155,7 @@ protected:
   int sizeYm1;
   int sizeZm1;
 
-  typedef std::unordered_map<int,dataCell> line_map;
-  typedef std::unordered_map<int,line_map> plane_map;
-  typedef std::unordered_map<int,plane_map> cube_map;
 
-  cube_map data;
 
   bool*** gridMap;
 

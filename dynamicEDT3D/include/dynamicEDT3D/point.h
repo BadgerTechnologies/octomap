@@ -54,7 +54,23 @@ class IntPoint3D {
 public:
   IntPoint3D() : x(0), y(0), z(0) {}
   IntPoint3D(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+  IntPoint3D(const IntPoint3D &other) {
+	  x = other.x; y = other.y; z = other.z;
+  }
+
+  bool operator== (const IntPoint3D &other) const {
+	  return (other.x == x) && (other.y == y) && (other.z == z);
+  }
+  bool operator!= (const IntPoint3D &other) const {
+	  return !((other.x == x) && (other.y == y) && (other.z == z));
+  }
+  IntPoint3D operator= (const IntPoint3D &other) {
+	  x = other.x; y = other.y; z = other.z;
+	  return *this;
+  }
+
   int x,y,z;
+
 };
 
 

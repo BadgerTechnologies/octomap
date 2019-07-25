@@ -142,7 +142,7 @@ DynamicEDT3D::~DynamicEDT3D() {
 	}
 }
 
-void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool initGridMap) {
+void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool initGridMap, unsigned int num_points_occupied /* = 0 */) {
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 	sizeZ = _sizeZ;
@@ -150,6 +150,9 @@ void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool init
 	sizeXm1 = sizeX-1;
 	sizeYm1 = sizeY-1;
 	sizeZm1 = sizeZ-1;
+
+	data.clear();
+	data.reserve(num_points_occupied);
 
 	if (initGridMap) {
 		if (gridMap) {
@@ -176,11 +179,12 @@ void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool init
 				for (int z=0; z<sizeZ; z++)
 					gridMap[x][y][z] = 0;
 	}
+
 }
 
-void DynamicEDT3D::initializeMap(int _sizeX, int _sizeY, int _sizeZ, bool*** _gridMap) {
+void DynamicEDT3D::initializeMap(int _sizeX, int _sizeY, int _sizeZ, bool*** _gridMap, unsigned int num_points_occupied /* = 0 */) {
 	gridMap = _gridMap;
-	initializeEmpty(_sizeX, _sizeY, _sizeZ, false);
+	initializeEmpty(_sizeX, _sizeY, _sizeZ, false, num_points_occupied);
 
 	for (int x=0; x<sizeX; x++) {
 		for (int y=0; y<sizeY; y++) {
@@ -215,7 +219,7 @@ void DynamicEDT3D::initializeMap(int _sizeX, int _sizeY, int _sizeZ, bool*** _gr
 							c.sqdist = 0;
 							c.dist = 0;
 							c.queueing = fwProcessed;
-							data[x][y][z] = c;
+							setCell(x,y,z,c);
 						} else setObstacle(x,y,z);
 					}
 				}
@@ -242,7 +246,7 @@ void DynamicEDT3D::setObstacle(int x, int y, int z) {
 	c.obstX = x;
 	c.obstY = y;
 	c.obstZ = z;
-	data[x][y][z] = c;
+	setCell(x,y,z,c);
 }
 
 void DynamicEDT3D::removeObstacle(int x, int y, int z) {
@@ -254,7 +258,7 @@ void DynamicEDT3D::removeObstacle(int x, int y, int z) {
 	c.obstY  = invalidObstData;
 	c.obstZ  = invalidObstData;
 	c.queueing = bwQueued;
-	data[x][y][z] = c;
+	setCell(x,y,z,c);
 }
 
 void DynamicEDT3D::exchangeObstacles(std::vector<INTPOINT3D> points) {
@@ -297,12 +301,12 @@ void DynamicEDT3D::update(bool updateRealDist) {
 			if (c.needsRaise) {
 				// RAISE
 				raiseCell(p, c, updateRealDist);
-				data[x][y][z] = c;
+				setCell(x,y,z,c);
 			}
 			else if (c.obstX != invalidObstData && isOccupied(c.obstX,c.obstY,c.obstZ,getCell(c.obstX,c.obstY,c.obstZ))) {
 				// LOWER
 				propagateCell(p, c, updateRealDist);
-				data[x][y][z] = c;
+				setCell(x,y,z,c);
 			}
 		}
 }
@@ -343,12 +347,12 @@ void DynamicEDT3D::inspectCellRaise(int &nx, int &ny, int &nz, bool updateRealDi
 			nc.obstZ = invalidObstData;
 			if (updateRealDist) nc.dist = maxDist;
 			nc.sqdist = maxDist_squared;
-			data[nx][ny][nz] = nc;
+			setCell(nx,ny,nz,nc);
 		} else {
 			if(nc.queueing != fwQueued){
 				open.push(nc.sqdist, INTPOINT3D(nx,ny,nz));
 				nc.queueing = fwQueued;
-				data[nx][ny][nz] = nc;
+				setCell(nx,ny,nz,nc);
 			}
 		}
 	}
@@ -485,7 +489,7 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 			nc.obstY = c.obstY;
 			nc.obstZ = c.obstZ;
 		}
-		data[nx][ny][nz] = nc;
+		setCell(nx,ny,nz,nc);
 	}
 }
 
@@ -529,7 +533,7 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 			c.obstY = y;
 			c.obstZ = z;
 			c.queueing = fwQueued;
-			data[x][y][z] = c;
+			setCell(x,y,z,c);
 			open.push(0, INTPOINT3D(x,y,z));
 		}
 	}
@@ -547,7 +551,7 @@ void DynamicEDT3D::commitAndColorize(bool updateRealDist) {
 		if (updateRealDist) c.dist  = maxDist;
 		c.sqdist = maxDist_squared;
 		c.needsRaise = true;
-		data[x][y][z] = c;
+		setCell(x,y,z,c);
 	}
 	removeList.clear();
 	addList.clear();
@@ -564,9 +568,13 @@ bool DynamicEDT3D::isOccupied(int &x, int &y, int &z, const dataCell &c) {
 
 DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
 	try {
-		return data.at(x).at(y).at(z);
+		return data.at(INTPOINT3D(x,y,z));
 	}
 	catch (const std::out_of_range&) {
 		return invalidDataCell;
 	}
+}
+
+void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
+	data[INTPOINT3D(x,y,z)] = cell;
 }

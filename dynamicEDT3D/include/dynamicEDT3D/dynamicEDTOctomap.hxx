@@ -97,7 +97,7 @@ void DynamicEDTOctomapBase<TREE>::initializeOcTree(octomap::point3d bbxMin, octo
 	int _sizeY = boundingBoxMaxKey[1] - boundingBoxMinKey[1] + 1;
 	int _sizeZ = boundingBoxMaxKey[2] - boundingBoxMinKey[2] + 1;
 
-	initializeEmpty(_sizeX, _sizeY, _sizeZ, false);
+	initializeEmpty(_sizeX, _sizeY, _sizeZ, false, octree->size());
 
 
 	if(unknownOccupied == false){
@@ -176,7 +176,7 @@ void DynamicEDTOctomapBase<TREE>::insertMaxDepthLeafAtInitialize(octomap::OcTree
 		c.dist = 0.0;
 		c.queueing = fwProcessed;
 		c.needsRaise = false;
-		data[x][y][z] = c;
+		setCell(x,y,z,c);
 	} else {
 		setObstacle(key[0]+offsetX, key[1]+offsetY, key[2]+offsetZ);
 	}
