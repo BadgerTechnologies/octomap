@@ -42,6 +42,8 @@
 #include <queue>
 #include <unordered_map>
 
+#include <boost/unordered_map.hpp>
+
 #include "bucketedqueue.h"
 
 //! A DynamicEDT3D object computes and updates a 3D distance map.
@@ -133,15 +135,13 @@ private:
   std::vector<INTPOINT3D> addList;
   std::vector<INTPOINT3D> lastObstacles;
 
-  // Taken from octomap and made to use 3d points
   struct KeyHash{
     size_t operator()(const INTPOINT3D &p) const{
-      // a simple hashing function
-	// explicit casts to size_t to operate on the complete range
-	// constanst will be promoted according to C++ standard
-      return static_cast<size_t>(p.x)
-        + 1447*static_cast<size_t>(p.y)
-        + 345637*static_cast<size_t>(p.z);
+    	std::size_t hash(0);
+    	boost::hash_combine(hash, p.x);
+    	boost::hash_combine(hash, p.y);
+    	boost::hash_combine(hash, p.z);
+    	return hash;
     }
   };
   std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
