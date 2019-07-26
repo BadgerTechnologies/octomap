@@ -571,7 +571,14 @@ DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
 }
 
 void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
-	if( cell == invalidDataCell ) {
+
+	if(    cell.dist 		== invalidDataCell.dist
+		&& cell.needsRaise 	== invalidDataCell.needsRaise
+		&& cell.obstX 		== invalidDataCell.obstX
+		&& cell.obstY 		== invalidDataCell.obstY
+		&& cell.obstX 		== invalidDataCell.obstZ
+		&& cell.queueing 	== invalidDataCell.queueing
+		&& cell.sqdist 		== invalidDataCell.sqdist) {
 		data.erase(INTPOINT3D(x,y,z));
 	}
 	else {
