@@ -119,6 +119,7 @@ DynamicEDT3D::DynamicEDT3D(int _maxdist_squared) {
 	sizeZm1 = 0;
 	doubleThreshold = 0;
 	padding = 0;
+	compressed = false;
 
 	invalidDataCell.dist = maxDist;
 	invalidDataCell.sqdist = maxDist_squared;
@@ -184,6 +185,8 @@ void DynamicEDT3D::initializeEmpty(int _sizeX, int _sizeY, int _sizeZ, bool init
 
 void DynamicEDT3D::initializeMap(int _sizeX, int _sizeY, int _sizeZ, bool*** _gridMap, unsigned int num_points_occupied /* = 0 */) {
 	gridMap = _gridMap;
+	compressed = false;
+	data_compressed.clear();
 	initializeEmpty(_sizeX, _sizeY, _sizeZ, false, num_points_occupied);
 
 	for (int x=0; x<sizeX; x++) {
@@ -488,6 +491,14 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 	}
 }
 
+void DynamicEDT3D::compressMap() {
+
+	// Create a new map and only store the distance to nearest object
+	for(auto it = data.begin(); it != data.end(); it++) {
+		data_compressed[INTPOINT3D(it->first)] = it->second.dist;
+	}
+	compressed = true;
+}
 
 float DynamicEDT3D::getDistance( int x, int y, int z ) const {
 	if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY) && (z>=0) && (z<sizeZ)){
@@ -561,27 +572,40 @@ bool DynamicEDT3D::isOccupied(int &x, int &y, int &z, const dataCell &c) {
 	return (c.obstX==x && c.obstY==y && c.obstZ==z);
 }
 
+bool DynamicEDT3D::isCompressed() const {
+	return compressed;
+}
+
 DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
-	try {
-		return data.at(INTPOINT3D(x,y,z));
+	if(!compressed) {
+		auto it = data.find(INTPOINT3D(x,y,z));
+		if (it != data.end())
+			return it->second;
 	}
-	catch (const std::out_of_range&) {
-		return invalidDataCell;
+	else {
+		dataCell ret(invalidDataCell);
+		auto it = data_compressed.find(INTPOINT3D(x,y,z));
+		if (it != data_compressed.end()) {
+			ret.dist = it->second;
+			return ret;
+		}
 	}
+	return invalidDataCell;
 }
 
 void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
-
-	if(    cell.dist 		== invalidDataCell.dist
-		&& cell.needsRaise 	== invalidDataCell.needsRaise
-		&& cell.obstX 		== invalidDataCell.obstX
-		&& cell.obstY 		== invalidDataCell.obstY
-		&& cell.obstX 		== invalidDataCell.obstZ
-		&& cell.queueing 	== invalidDataCell.queueing
-		&& cell.sqdist 		== invalidDataCell.sqdist) {
-		data.erase(INTPOINT3D(x,y,z));
-	}
-	else {
-		data[INTPOINT3D(x,y,z)] = cell;
+	if(!compressed) {
+		if(    cell.dist 		== invalidDataCell.dist
+			&& cell.needsRaise 	== invalidDataCell.needsRaise
+			&& cell.obstX 		== invalidDataCell.obstX
+			&& cell.obstY 		== invalidDataCell.obstY
+			&& cell.obstX 		== invalidDataCell.obstZ
+			&& cell.queueing 	== invalidDataCell.queueing
+			&& cell.sqdist 		== invalidDataCell.sqdist) {
+			data.erase(INTPOINT3D(x,y,z));
+		}
+		else {
+			data[INTPOINT3D(x,y,z)] = cell;
+		}
 	}
 }

@@ -72,6 +72,9 @@ public:
   //! update distance map to reflect the changes
   virtual void update(bool updateRealDist=true);
 
+  //! Compress distance map (will not retain dynamic properties)
+  void compressMap();
+
   //! returns the obstacle distance at the specified location
   float getDistance( int x, int y, int z ) const;
   //! gets the closest occupied cell for that location
@@ -81,6 +84,9 @@ public:
   int getSQCellDistance( int x, int y, int z ) const;
   //! checks whether the specficied location is occupied
   bool isOccupied(int x, int y, int z) const;
+
+  //! checks whether this object is compressed (read only, compressed map operations only)
+  bool isCompressed() const;
 
   //! returns the x size of the workspace/map
   unsigned int getSizeX() const {return sizeX;}
@@ -145,6 +151,7 @@ private:
     }
   };
   std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
+  std::unordered_map<INTPOINT3D,float,KeyHash> data_compressed;
 
   // maps
 protected:
@@ -155,8 +162,6 @@ protected:
   int sizeYm1;
   int sizeZm1;
 
-
-
   bool*** gridMap;
 
   // parameters
@@ -166,6 +171,7 @@ protected:
   double sqrt2;
   double maxDist;
   int maxDist_squared;
+  bool compressed;
 };
 
 

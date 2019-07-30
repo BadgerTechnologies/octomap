@@ -61,6 +61,10 @@ public:
 	///If you set updateRealDist to false, computations will be faster (square root will be omitted), but you can only retrieve squared distances
 	virtual void update(bool updateRealDist=true);
 
+	void compressMap() {
+		DynamicEDT3D::compressMap();
+	}
+
 	///retrieves distance and closestObstacle (closestObstacle is to be discarded if distance is maximum distance, the method does not write closestObstacle in this case).
 	///Returns DynamicEDTOctomapBase::distanceValue_Error if point is outside the map.
 	void getDistanceAndClosestObstacle(const octomap::point3d& p, float &distance, octomap::point3d& closestObstacle) const;
