@@ -73,7 +73,8 @@ public:
   virtual void update(bool updateRealDist=true);
 
   //! Compress distance map (will not retain dynamic properties)
-  void compressMap();
+  //! Returns compressed map size in bytes
+  size_t compressMap();
 
   //! returns the obstacle distance at the specified location
   float getDistance( int x, int y, int z ) const;
@@ -150,8 +151,6 @@ private:
     	return hash;
     }
   };
-  std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
-  std::unordered_map<INTPOINT3D,float,KeyHash> data_compressed;
 
   // maps
 protected:
@@ -172,6 +171,10 @@ protected:
   double maxDist;
   int maxDist_squared;
   bool compressed;
+
+
+  std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
+  std::unordered_map<INTPOINT3D,float,KeyHash> data_compressed;
 };
 
 

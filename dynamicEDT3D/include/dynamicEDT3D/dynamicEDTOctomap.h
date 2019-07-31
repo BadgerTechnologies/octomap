@@ -61,9 +61,8 @@ public:
 	///If you set updateRealDist to false, computations will be faster (square root will be omitted), but you can only retrieve squared distances
 	virtual void update(bool updateRealDist=true);
 
-	void compressMap() {
-		DynamicEDT3D::compressMap();
-	}
+	size_t compressMap();
+	size_t compressMaptoOctree();
 
 	///retrieves distance and closestObstacle (closestObstacle is to be discarded if distance is maximum distance, the method does not write closestObstacle in this case).
 	///Returns DynamicEDTOctomapBase::distanceValue_Error if point is outside the map.
@@ -71,6 +70,8 @@ public:
 
 	///retrieves distance at point. Returns DynamicEDTOctomapBase::distanceValue_Error if point is outside the map.
 	float getDistance(const octomap::point3d& p) const;
+
+	float getDistancefromOctree(const octomap::point3d& p) const;
 
 	///retrieves distance at key. Returns DynamicEDTOctomapBase::distanceValue_Error if key is outside the map.
 	float getDistance(const octomap::OcTreeKey& k) const;
@@ -118,6 +119,7 @@ private:
 	void mapToWorld(int x, int y, int z, octomap::OcTreeKey &key) const;
 
 	TREE* octree;
+	octomap::OcTree* compressed_data_octree;
 	bool unknownOccupied;
 	int treeDepth;
 	double treeResolution;

@@ -49,11 +49,12 @@ DynamicEDTOctomapBase<TREE>::DynamicEDTOctomapBase(float maxdist, TREE* _octree,
 	treeResolution = octree->getResolution();
 	initializeOcTree(bbxMin, bbxMax);
 	octree->enableChangeDetection(true);
+	compressed_data_octree = nullptr;
 }
 
 template <class TREE>
 DynamicEDTOctomapBase<TREE>::~DynamicEDTOctomapBase() {
-
+	delete compressed_data_octree;
 }
 
 
@@ -276,6 +277,28 @@ float DynamicEDTOctomapBase<TREE>::getDistance(const octomap::OcTreeKey& k) cons
 }
 
 template <class TREE>
+float DynamicEDTOctomapBase<TREE>::getDistancefromOctree(const octomap::point3d& p) const {
+	double x = p.x();
+	double y = p.y();
+	double z = p.z();
+
+
+	if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
+	  octomap::OcTreeKey key;
+	  key.k[0] = p.x() - offsetX;
+	  key.k[1] = p.y() - offsetY;
+	  key.k[2] = p.z() - offsetZ;
+	  auto node = compressed_data_octree->search(x,y,z);
+	  if(node != nullptr)
+		  return node->getValue()*treeResolution;
+	  return maxDist;
+
+	} else {
+	  return distanceValue_Error;
+	}
+}
+
+template <class TREE>
 float DynamicEDTOctomapBase<TREE>::getDistance_unsafe(const octomap::OcTreeKey& k) const {
   int x = k[0] + offsetX;
   int y = k[1] + offsetY;
@@ -340,4 +363,25 @@ bool DynamicEDTOctomapBase<TREE>::checkConsistency() const {
 	}
 
 	return true;
+}
+
+template <class TREE>
+size_t DynamicEDTOctomapBase<TREE>::compressMap() {
+	return DynamicEDT3D::compressMap();
+}
+
+template <class TREE>
+size_t DynamicEDTOctomapBase<TREE>::compressMaptoOctree() {
+	delete compressed_data_octree;
+	compressed_data_octree = new octomap::OcTree(treeResolution);
+	for(auto it = data.begin(); it != data.end(); it++) {
+		octomap::OcTreeKey key;
+		key.k[0] = it->first.x - offsetX;
+		key.k[1] = it->first.y - offsetY;
+		key.k[2] = it->first.z - offsetZ;
+		compressed_data_octree->setNodeValue(key, it->second.dist);
+	}
+
+	return compressed_data_octree->memoryUsage();
+	//compressed_data_octree->prune();
 }

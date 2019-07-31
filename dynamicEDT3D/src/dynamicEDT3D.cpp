@@ -491,13 +491,16 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 	}
 }
 
-void DynamicEDT3D::compressMap() {
+size_t DynamicEDT3D::compressMap() {
 
 	// Create a new map and only store the distance to nearest object
 	for(auto it = data.begin(); it != data.end(); it++) {
 		data_compressed[INTPOINT3D(it->first)] = it->second.dist;
 	}
+	data.clear();
 	compressed = true;
+
+	return data_compressed.bucket_count() * sizeof(float);
 }
 
 float DynamicEDT3D::getDistance( int x, int y, int z ) const {
