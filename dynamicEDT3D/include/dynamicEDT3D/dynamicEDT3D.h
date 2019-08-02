@@ -43,6 +43,7 @@
 #include <unordered_map>
 
 #include <boost/unordered_map.hpp>
+#include <tsl/sparse_map.h>
 
 #include "bucketedqueue.h"
 
@@ -174,7 +175,7 @@ protected:
 
 
   std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
-  std::unordered_map<INTPOINT3D,float,KeyHash> data_compressed;
+  tsl::sparse_map<size_t,float> data_compressed;
 };
 
 

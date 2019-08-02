@@ -39,6 +39,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <boost/unordered_map.hpp>
 
 #define FOR_EACH_NEIGHBOR_WITH_CHECK(function, p, ...) \
 	int x=p.x;\
@@ -494,13 +495,33 @@ void DynamicEDT3D::inspectCellPropagate(int &nx, int &ny, int &nz, dataCell &c, 
 size_t DynamicEDT3D::compressMap() {
 
 	// Create a new map and only store the distance to nearest object
+	data_compressed.reserve(data.bucket_count());
 	for(auto it = data.begin(); it != data.end(); it++) {
-		data_compressed[INTPOINT3D(it->first)] = it->second.dist;
+		std::size_t hash(0);
+		boost::hash_combine(hash, it->first.x);
+		boost::hash_combine(hash, it->first.y);
+		boost::hash_combine(hash, it->first.z);
+		data_compressed[hash] = it->second.dist;
 	}
 	data.clear();
 	compressed = true;
 
-	return data_compressed.bucket_count() * sizeof(float);
+	// Estimate the size of this object
+	// There are miminally the following objects contained
+	// in an unordered map bucket:
+	//   1. Pointer to list of objects in bucket (void*)
+	//   2. Pointer to "next" bucket (for iterator, void*)
+	//   3. Key hash (assume uint)
+	//   4. Object in bucket (in this case, a float)
+	// Other data we'll assume use a relatively small, constant space
+	size_t map_size = data_compressed.size() * (
+			+ sizeof(void*)
+			+ sizeof(void*)
+			+ sizeof(unsigned int)
+			+ (data_compressed.load_factor() * sizeof(float))
+			);
+
+	return map_size;
 }
 
 float DynamicEDT3D::getDistance( int x, int y, int z ) const {
@@ -587,7 +608,11 @@ DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
 	}
 	else {
 		dataCell ret(invalidDataCell);
-		auto it = data_compressed.find(INTPOINT3D(x,y,z));
+    	std::size_t hash(0);
+    	boost::hash_combine(hash, x);
+    	boost::hash_combine(hash, y);
+    	boost::hash_combine(hash, z);
+		auto it = data_compressed.find(hash);
 		if (it != data_compressed.end()) {
 			ret.dist = it->second;
 			return ret;
