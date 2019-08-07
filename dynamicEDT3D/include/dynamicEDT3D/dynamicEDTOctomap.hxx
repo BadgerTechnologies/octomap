@@ -284,13 +284,18 @@ float DynamicEDTOctomapBase<TREE>::getDistancefromOctree(const octomap::point3d&
 
 
 	if(x>=0 && x<sizeX && y>=0 && y<sizeY && z>=0 && z<sizeZ){
-	  octomap::OcTreeKey key;
-	  key.k[0] = p.x() - offsetX;
-	  key.k[1] = p.y() - offsetY;
-	  key.k[2] = p.z() - offsetZ;
+
 	  auto node = compressed_data_octree->search(x,y,z);
-	  if(node != nullptr)
-		  return node->getValue()*treeResolution;
+	  if(node != nullptr) {
+		  auto point = node->getValue();
+		  octomap::OcTreeKey key;
+		  key.k[0] = point.x - offsetX;
+		  key.k[1] = point.y - offsetY;
+		  key.k[2] = point.z - offsetZ;
+		  octomap::point3d p_map(compressed_data_octree->keyToCoord(key));
+		  //p_map *= treeResolution;
+		  return p_map.distance(p);
+	  }
 	  return maxDist;
 
 	} else {
@@ -373,13 +378,14 @@ size_t DynamicEDTOctomapBase<TREE>::compressMap() {
 template <class TREE>
 size_t DynamicEDTOctomapBase<TREE>::compressMaptoOctree() {
 	delete compressed_data_octree;
-	compressed_data_octree = new octomap::OcTree(treeResolution);
+	compressed_data_octree = new octomap::Abstract3DOcTree<INTPOINT3D>(treeResolution);
 	for(auto it = data.begin(); it != data.end(); it++) {
 		octomap::OcTreeKey key;
 		key.k[0] = it->first.x - offsetX;
 		key.k[1] = it->first.y - offsetY;
 		key.k[2] = it->first.z - offsetZ;
-		compressed_data_octree->setNodeValue(key, it->second.dist);
+		INTPOINT3D p(it->second.obstX, it->second.obstY, it->second.obstZ);
+		compressed_data_octree->setNode(key, p);
 	}
 
 	return compressed_data_octree->memoryUsage();

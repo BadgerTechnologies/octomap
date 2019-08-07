@@ -57,17 +57,17 @@ public:
   IntPoint3D() : x(0), y(0), z(0) {}
   IntPoint3D(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
   // Copy
-  IntPoint3D(const IntPoint3D& other) noexcept :
+  IntPoint3D(const IntPoint3D& other) :
 	  x(other.x),
 	  y(other.y),
 	  z(other.z)
   {}
-  // Move
-  IntPoint3D(IntPoint3D&& other) noexcept :
-	  x(std::move(other.x)),
-	  y(std::move(other.y)),
-	  z(std::move(other.z))
-  {}
+//  // Move
+//  IntPoint3D(IntPoint3D&& other) noexcept :
+//	  x(std::move(other.x)),
+//	  y(std::move(other.y)),
+//	  z(std::move(other.z))
+//  {}
 
   bool operator== (const IntPoint3D &other) const {
 	  return (other.x == x) && (other.y == y) && (other.z == z);

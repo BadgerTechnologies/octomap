@@ -30,7 +30,7 @@ if (CMAKE_PROJECT_NAME STREQUAL "octomap-distribution")
   ADD_DEPENDENCIES(dynamicedt3d octomap)
 endif()
 
-ADD_SUBDIRECTORY(examples)
+#ADD_SUBDIRECTORY(examples)
 
 install(TARGETS dynamicedt3d dynamicedt3d-static
   EXPORT dynamicEDT3DTargets

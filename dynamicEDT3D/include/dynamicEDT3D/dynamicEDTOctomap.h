@@ -41,6 +41,8 @@
 #include "dynamicEDT3D.h"
 #include <octomap/OcTree.h>
 #include <octomap/OcTreeStamped.h>
+#include <octomap/OcTreeBase.h>
+#include <octomap/Abstract3DOcTree.h>
 
 /// A DynamicEDTOctomapBase object connects a DynamicEDT3D object to an octomap.
 template <class TREE>
@@ -119,7 +121,7 @@ private:
 	void mapToWorld(int x, int y, int z, octomap::OcTreeKey &key) const;
 
 	TREE* octree;
-	octomap::OcTree* compressed_data_octree;
+	octomap::Abstract3DOcTree<INTPOINT3D>* compressed_data_octree;
 	bool unknownOccupied;
 	int treeDepth;
 	double treeResolution;
