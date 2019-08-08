@@ -379,12 +379,20 @@ template <class TREE>
 size_t DynamicEDTOctomapBase<TREE>::compressMaptoOctree() {
 	delete compressed_data_octree;
 	compressed_data_octree = new octomap::Abstract3DOcTree<INTPOINT3D>(treeResolution);
-	for(auto it = data.begin(); it != data.end(); it++) {
+	for( int x = 0; x < sizeX; x++)
+		for( int y = 0; y < sizeY; y++)
+			for( int z = 0; z < sizeZ; z++) {
+	//for(auto it = data.begin(); it != data.end(); it++) {
 		octomap::OcTreeKey key;
-		key.k[0] = it->first.x - offsetX;
-		key.k[1] = it->first.y - offsetY;
-		key.k[2] = it->first.z - offsetZ;
-		INTPOINT3D p(it->second.obstX, it->second.obstY, it->second.obstZ);
+//		key.k[0] = it->first.x - offsetX;
+//		key.k[1] = it->first.y - offsetY;
+//		key.k[2] = it->first.z - offsetZ;
+//		INTPOINT3D p(it->second.obstX, it->second.obstY, it->second.obstZ);
+		key.k[0] = x - offsetX;
+		key.k[1] = y - offsetY;
+		key.k[2] = z - offsetZ;
+		auto cell = getCell(x, y, z);
+		INTPOINT3D p(cell.obstX, cell.obstY, cell.obstZ);
 		compressed_data_octree->setNode(key, p);
 	}
 
