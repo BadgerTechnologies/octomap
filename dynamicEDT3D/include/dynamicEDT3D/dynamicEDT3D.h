@@ -174,7 +174,7 @@ protected:
   bool compressed;
 
 
-  std::unordered_map<INTPOINT3D,dataCell,KeyHash> data;
+  tsl::sparse_map<size_t,dataCell> data;
   tsl::sparse_map<size_t,float> data_compressed;
 };
 

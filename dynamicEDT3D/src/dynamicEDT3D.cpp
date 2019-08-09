@@ -497,11 +497,11 @@ size_t DynamicEDT3D::compressMap() {
 	// Create a new map and only store the distance to nearest object
 	data_compressed.reserve(data.bucket_count());
 	for(auto it = data.begin(); it != data.end(); it++) {
-		std::size_t hash(0);
-		boost::hash_combine(hash, it->first.x);
-		boost::hash_combine(hash, it->first.y);
-		boost::hash_combine(hash, it->first.z);
-		data_compressed[hash] = it->second.dist;
+//		std::size_t hash(0);
+//		boost::hash_combine(hash, it->first.x);
+//		boost::hash_combine(hash, it->first.y);
+//		boost::hash_combine(hash, it->first.z);
+		data_compressed[it->first] = it->second.dist;
 	}
 	data.clear();
 	compressed = true;
@@ -601,17 +601,17 @@ bool DynamicEDT3D::isCompressed() const {
 }
 
 DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
+	std::size_t hash(0);
+	boost::hash_combine(hash, x);
+	boost::hash_combine(hash, y);
+	boost::hash_combine(hash, z);
 	if(!compressed) {
-		auto it = data.find(INTPOINT3D(x,y,z));
+		auto it = data.find(hash);
 		if (it != data.end())
 			return it->second;
 	}
 	else {
 		dataCell ret(invalidDataCell);
-    	std::size_t hash(0);
-    	boost::hash_combine(hash, x);
-    	boost::hash_combine(hash, y);
-    	boost::hash_combine(hash, z);
 		auto it = data_compressed.find(hash);
 		if (it != data_compressed.end()) {
 			ret.dist = it->second;
@@ -622,6 +622,10 @@ DynamicEDT3D::dataCell DynamicEDT3D::getCell(int &x, int &y, int &z) const {
 }
 
 void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
+	std::size_t hash(0);
+	boost::hash_combine(hash, x);
+	boost::hash_combine(hash, y);
+	boost::hash_combine(hash, z);
 	if(!compressed) {
 		if(    cell.dist 		== invalidDataCell.dist
 			&& cell.needsRaise 	== invalidDataCell.needsRaise
@@ -630,10 +634,10 @@ void DynamicEDT3D::setCell(int &x, int &y, int &z, const dataCell &cell){
 			&& cell.obstX 		== invalidDataCell.obstZ
 			&& cell.queueing 	== invalidDataCell.queueing
 			&& cell.sqdist 		== invalidDataCell.sqdist) {
-			data.erase(INTPOINT3D(x,y,z));
+			data.erase(hash);
 		}
 		else {
-			data[INTPOINT3D(x,y,z)] = cell;
+			data[hash] = cell;
 		}
 	}
 }
