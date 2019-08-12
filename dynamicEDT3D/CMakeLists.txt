@@ -52,6 +52,8 @@ set(INSTALL_TARGETS_DEFAULT_ARGS
 	ARCHIVE DESTINATION lib
 )
 
+find_package(tsl-sparse-map REQUIRED)
+
 find_package(octomap REQUIRED
   HINTS ${CMAKE_SOURCE_DIR}/lib/cmake/octomap
    ${CMAKE_SOURCE_DIR}/../octomap/lib/cmake/octomap
@@ -62,7 +64,6 @@ MESSAGE(STATUS "octomap libraries: ${OCTOMAP_LIBRARIES}")
 INCLUDE_DIRECTORIES(BEFORE SYSTEM ${OCTOMAP_INCLUDE_DIRS})
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(${BASE_DIR}/sparse-map)
 
 
 file(GLOB dynamicEDT3D_HDRS ${PROJECT_SOURCE_DIR}/include/dynamicEDT3D/*.h ${PROJECT_SOURCE_DIR}/include/dynamicEDT3D/*.hxx)
