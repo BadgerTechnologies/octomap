@@ -7,6 +7,7 @@ SET (octomap_SRCS
   OcTree.cpp
   OcTreeNode.cpp
   OcTreeSpace.cpp
+  OcTreeDistance.cpp
   OcTreeStamped.cpp
   ColorOcTree.cpp
   )
