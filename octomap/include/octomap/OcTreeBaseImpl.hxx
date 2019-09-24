@@ -286,6 +286,19 @@ namespace octomap {
   }
 
   template <class NODE,class I>
+  bool OcTreeBaseImpl<NODE,I>::createRootNode(){
+    if(root == NULL)
+    {
+      root = allocNode();
+      tree_size = calcNumNodes();
+      size_changed = true;
+      return true;
+    }
+    else
+      return false;
+  }
+
+  template <class NODE,class I>
   NODE* OcTreeBaseImpl<NODE,I>::createNodeChild(NODE* node, unsigned int childIdx){
     assert(childIdx < 8);
     if (node->children == NULL) {

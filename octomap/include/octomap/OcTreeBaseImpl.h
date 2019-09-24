@@ -121,6 +121,10 @@ namespace octomap {
     }
     
     // -- Tree structure operations formerly contained in the nodes ---
+
+    /// Creates (allocates) the root of the OcTree. @return TRUE if root node created, FALSE if
+    /// root node not created because it already exists
+    bool createRootNode();
    
     /// Creates (allocates) the i-th child of the node. @return ptr to newly create NODE
     NODE* createNodeChild(NODE* node, unsigned int childIdx);
