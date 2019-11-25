@@ -66,7 +66,7 @@ namespace octomap {
   CountingOcTreeNode* CountingOcTree::updateNode(const OcTreeKey& k) {
 
     if (root == NULL) {
-      root = new CountingOcTreeNode();
+      root = this->allocNode();
       tree_size++;
     }
     CountingOcTreeNode* curNode (root);
