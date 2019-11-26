@@ -851,7 +851,7 @@ namespace octomap {
 
     if (!nodeChildExists(node, pos)) {
       // child does not exist, but maybe it's a pruned node?
-      if ((!nodeHasChildren(node)) && (node != this->root)) { // TODO double check for exists / root exception?
+      if ((!nodeHasChildren(node))) {
         // current node does not have children AND it's not the root node
         // -> expand pruned node
         expandNode(node);
