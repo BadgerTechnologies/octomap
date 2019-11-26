@@ -631,7 +631,13 @@ namespace octomap {
     if (depth == 0)
       depth = tree_depth;
 
-    return deleteNodeRecurs(root, 0, depth, key);
+    bool deleteRoot = deleteNodeRecurs(root, 0, depth, key);
+    if (deleteRoot)
+    {
+      deleteNodeRecurs(root);
+      root = NULL;
+    }
+    return deleteRoot;
   }
 
   template <class NODE,class I>
