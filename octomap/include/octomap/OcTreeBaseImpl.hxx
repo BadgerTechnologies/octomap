@@ -45,7 +45,7 @@ namespace octomap {
 
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(double in_resolution) :
-    I(), root(NULL), tree_depth(16), tree_max_val(32768),
+    I(), root(NULL), tree_depth(KEY_BIT_WIDTH), tree_max_val(KEY_CENTER),
     resolution(in_resolution), tree_size(0),
     // Start the pools off a bit larger than the default of 32 to keep from
     // allocating the intial smaller regions.
@@ -178,11 +178,131 @@ namespace octomap {
 
     // init node size lookup table:
     sizeLookupTable.resize(tree_depth+1);
-    for(unsigned i = 0; i <= tree_depth; ++i){
-      sizeLookupTable[i] = resolution * double(1 << (tree_depth - i));
+    for(unsigned i = 1; i <= tree_depth; ++i){
+      sizeLookupTable[i] = resolution * double(((size_t)1) << (tree_depth - i));
     }
+    // to keep from getting the wrong answer when at depth 0, double the
+    // previous result instead of possibly shifting the 1 off the end
+    sizeLookupTable[0] = 2.0 * sizeLookupTable[1];
 
     size_changed = true;
+  }
+
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::setTreeDepth(unsigned int depth) {
+    if (tree_depth == depth) {
+      // Nothing to do
+      return;
+    }
+
+    if (root) {
+      // This tree has nodes. We need to alter the tree to match the new depth.
+      NODE* new_root = allocNode();
+      // We will be deleting the old root, which will decrement tree_size, so
+      // be sure to incerement here for the new root.
+      tree_size++;
+      allocNodeChildren(new_root);
+      // To alter the tree we will need to examine each octant individually.
+      // Expand the root now if necessary (so it has children to examine).
+      if (!nodeHasChildren(root)) {
+        // We need to re-root the children, but they don't exist yet when
+        // pruned. Expand now to get the children back.
+        expandNode(root);
+      }
+      if (depth > tree_depth) {
+        // Grow the tree to the new depth
+        for (unsigned int i=0; i<8; i++) {
+          if (nodeChildExists(root, i)) {
+            NODE* child = getNodeChild(root, i);
+            // Create a chain of nodes from the new_root to the depth of the
+            // old root, and move the child to the new tree.
+            unsigned int d=1;
+            NODE* new_node = createNodeChild(new_root, i);
+            new_node->copyData(*child);
+            // After the root, the direction to go is toward the origin, which
+            // will be the bitwise complement of the bottom 3 bits.
+            unsigned int child_index = 0x07 & ~i;
+            while (d < (depth - tree_depth)) {
+              new_node = createNodeChild(new_node, child_index);
+              new_node->copyData(*child);
+              d++;
+            }
+            // Now move the portion of the old tree at child i to the new tree
+            // at the child index.
+            allocNodeChildren(new_node);
+            setNodeChild(new_node, child_index, child);
+            setNodeChild(root, i, NULL);
+          }
+        }
+        // All that should be left of the old tree is the old root with no
+        // children.
+        assert(!nodeHasChildren(root));
+      } else {
+        // Shrink the tree to the new depth
+        for (unsigned int i=0; i<8; i++) {
+          // Go down from the root until the new depth in each of the new
+          // octants, expanding if necessary as we go. Move each octant to the
+          // new root. At the end whatever remains of the old tree will be
+          // deleted below.
+          if (nodeChildExists(root, i)) {
+            NODE* child = getNodeChild(root, i);
+            // Follow the chain of nodes from the root to the depth of the
+            // new root, and move the child to the new tree.
+            unsigned int d=1;
+            // After the root, the direction to go is toward the origin, which
+            // will be the bitwise complement of the bottom 3 bits.
+            unsigned int child_index = 0x07 & ~i;
+            NODE* parent = child;
+            while (d <= (tree_depth - depth)) {
+              parent = child;
+              if (!nodeHasChildren(parent)) {
+                expandNode(parent);
+              }
+              if (!nodeChildExists(parent, child_index)) {
+                child = NULL;
+                break;
+              }
+              child = getNodeChild(parent, child_index);
+              d++;
+            }
+            // If child is NULL, it isn't safe to call setNodeChild as we will
+            // lose our children pointer area. Just directly set the child.
+            new_root->children[i] = child;
+            // Replace the child with NULL.
+            // This might make the parent look like a pruned leaf when it is
+            // not, but this is only an intermediate state. At the end, the
+            // remenants of the old tree will be deleted, and blanket deletion
+            // doesn't expand nodes, so this is safe.
+            setNodeChild(parent, child_index, NULL);
+          }
+        }
+        // It is possible to have lost all data from the original tree completely.
+        // In such a case, we will have all NULL children pointers in the new root,
+        // but still have the children allocated. Check for that here.
+        deleteNodeChildrenIfNecessary(new_root);
+        if (!nodeHasChildren(new_root)) {
+          // We ended up child-less, the whole tree was outside the new area.
+          // Delete the new root and set to NULL.
+          deleteNodeRecurs(new_root);
+          new_root = NULL;
+        } else {
+          // After shrinking the tree, we may be able to prune the new root.
+          pruneNode(new_root);
+        }
+      }
+      deleteNodeRecurs(root);
+      root = new_root;
+      if (root != NULL) {
+        // Set the correct occupancy on the root node.
+        root->updateOccupancyChildren();
+      }
+      // Assert that tree_size was maintained properly through the above code.
+      assert(size() == calcNumNodes());
+    }
+    tree_depth = depth;
+    tree_max_val = (1U << (depth-1));
+    // need to recalculate center and lut
+    setResolution(resolution);
   }
 
   template <class NODE,class I>
@@ -336,7 +456,7 @@ namespace octomap {
   void OcTreeBaseImpl<NODE,I>::deleteNodeChildren(NODE* node, const OcTreeKey& key, unsigned int depth,
                                                   const DeletionCallback& deletion_notifier){
     if (node->children != NULL) {
-      key_type center_offset_key = tree_max_val >> (depth + 1);
+      key_type center_offset_key = computeCenterOffsetKey(depth, tree_max_val);
       for (unsigned int i=0; i<8; i++) {
         if (node->children[i] != NULL){
           OcTreeKey child_key;
@@ -367,45 +487,31 @@ namespace octomap {
 
   template <class NODE,class I>
   inline key_type OcTreeBaseImpl<NODE,I>::coordToKey(double coordinate, unsigned depth) const{
-    assert (depth <= tree_depth);
-    int keyval = ((int) floor(resolution_factor * coordinate));
-
-    unsigned int diff = tree_depth - depth;
-    if(!diff) // same as coordToKey without depth
-      return keyval + tree_max_val;
-    else // shift right and left => erase last bits. Then add offset.
-      return ((keyval >> diff) << diff) + (1 << (diff-1)) + tree_max_val;
+    return coordToKeyAtDepthBoundsCheck(coordinate, depth);
   }
 
 
   template <class NODE,class I>
   bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double coordinate, key_type& keyval) const {
-
-    // scale to resolution and shift center for tree_max_val
-    int scaled_coord =  ((int) floor(resolution_factor * coordinate)) + tree_max_val;
-
-    // keyval within range of tree?
-    if (( scaled_coord >= 0) && (((unsigned int) scaled_coord) < (2*tree_max_val))) {
-      keyval = scaled_coord;
-      return true;
+    bool rv;
+    key_type new_keyval = coordToKeyAtDepthBoundsCheck(coordinate, -1, &rv);
+    if (rv)
+    {
+      keyval = new_keyval;
     }
-    return false;
+    return rv;
   }
 
 
   template <class NODE,class I>
   bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double coordinate, unsigned depth, key_type& keyval) const {
-
-    // scale to resolution and shift center for tree_max_val
-    int scaled_coord =  ((int) floor(resolution_factor * coordinate)) + tree_max_val;
-
-    // keyval within range of tree?
-    if (( scaled_coord >= 0) && (((unsigned int) scaled_coord) < (2*tree_max_val))) {
-      keyval = scaled_coord;
-      keyval = adjustKeyAtDepth(keyval, depth);
-      return true;
+    bool rv;
+    key_type new_keyval = coordToKeyAtDepthBoundsCheck(coordinate, depth, &rv);
+    if (rv)
+    {
+      keyval = new_keyval;
     }
-    return false;
+    return rv;
   }
 
   template <class NODE,class I>
@@ -512,6 +618,8 @@ namespace octomap {
 
     if(diff == 0)
       return key;
+    if(diff >= tree_depth)
+      return tree_max_val;
     else
       return (((key-tree_max_val) >> diff) << diff) + (1 << (diff-1)) + tree_max_val;
   }
@@ -564,7 +672,8 @@ namespace octomap {
 
     if (depth == 0)
       depth = tree_depth;
-
+    if (depth > tree_depth)
+      depth = tree_depth;
 
 
     // generate appropriate key_at_depth for queried depth
@@ -766,8 +875,6 @@ namespace octomap {
       current_key[dim] += step[dim];
       tMax[dim] += tDelta[dim];
 
-      assert (current_key[dim] < 2*this->tree_max_val);
-
       // reached endpoint, key equv?
       if (current_key == key_end) {
         done = true;
@@ -913,7 +1020,7 @@ namespace octomap {
 #ifndef NDEBUG
       if (depth < tree_depth)
       {
-        unsigned int mask = (1 << (tree_depth - depth - 1)) - 1;
+        key_type mask = (1 << (tree_depth - depth - 1)) - 1;
         assert((key[0] & mask) == 0);
         assert((key[1] & mask) == 0);
         assert((key[2] & mask) == 0);
@@ -930,8 +1037,8 @@ namespace octomap {
           // of it. Do nothing.
         }
       } else {
-        key_type key_size_down = tree_max_val >> depth;
-        key_type key_size_up = (tree_max_val-1) >> depth;
+        key_type key_size_down = (depth == tree_depth ? 0 : tree_max_val >> depth);
+        key_type key_size_up = (depth == tree_depth ? 0 : (tree_max_val-1) >> depth);
 
         assert(key[0] - key_size_down <= key[0] + key_size_up);
         assert(key[1] - key_size_down <= key[1] + key_size_up);
@@ -959,7 +1066,7 @@ namespace octomap {
             expandNode(node);
           }
 
-          key_type center_offset_key = tree_max_val >> (depth + 1);
+          key_type center_offset_key = computeCenterOffsetKey(depth, tree_max_val);
           for (unsigned int i=0; i<8; i++) {
             if (nodeChildExists(node, i)) {
               OcTreeKey child_key;
@@ -986,6 +1093,10 @@ namespace octomap {
             // Update the inner node's expiry to track the min of all children
             node->updateOccupancyChildren();
           }
+        } else if (depth == tree_depth) {
+          // This should never happen. It would mean that a node at the tree
+          // depth was neither inside or outside the ROI, which is impossible
+          assert(false);
         }
       }
     }

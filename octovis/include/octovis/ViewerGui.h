@@ -56,7 +56,7 @@ namespace octomap {
     Q_OBJECT
    
   public:
-    ViewerGui(const std::string& filename="", QWidget *parent = 0, unsigned int initTreeDepth = 16);
+    ViewerGui(const std::string& filename="", QWidget *parent = 0, unsigned int initTreeDepth = KEY_BIT_WIDTH);
     ~ViewerGui();
 
     static const unsigned int LASERTYPE_URG  = 0;
@@ -130,6 +130,7 @@ namespace octomap {
     void changeNumberOfScans(unsigned scans);
     void changeCurrentScan(unsigned scans);
     void changeResolution(double resolution);
+    void changeTreeDepthMaximum(unsigned depth_maximum);
     void changeCamPosition(double x, double y, double z, double lookX, double lookY, double lookZ);
 
   private:
@@ -190,6 +191,7 @@ namespace octomap {
     void addOctree(AbstractOcTree* tree, int id, pose6d origin);
     void addOctree(AbstractOcTree* tree, int id);
     bool getOctreeRecord(int id, OcTreeRecord*& otr);
+    unsigned int getOctreeMaxDepth();
 
     void saveCameraPosition(const char* filename) const;
     void loadCameraPosition(const char* filename);
@@ -212,6 +214,7 @@ namespace octomap {
     double m_laserMaxRange;
     double m_occupancyThresh; // FIXME: This is not really used at the moment...
     unsigned int m_max_tree_depth;
+    unsigned int m_max_tree_depth_max_setting;  /// maximum allowed tree depth setting
     unsigned int m_laserType; // SICK or Hokuyo /URG
     bool m_cameraStored;
     QLabel* m_nodeSelected;

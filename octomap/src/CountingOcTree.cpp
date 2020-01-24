@@ -107,7 +107,7 @@ namespace octomap {
 
     if (depth < max_depth && nodeHasChildren(node)) {
 
-      key_type center_offset_key = this->tree_max_val >> (depth + 1);
+      key_type center_offset_key = computeCenterOffsetKey(depth, tree_max_val);
       OcTreeKey search_key;
 
       for (unsigned int i=0; i<8; ++i) {

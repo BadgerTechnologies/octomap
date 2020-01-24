@@ -63,6 +63,7 @@ namespace octomap {
     s << "id " << getTreeType() << std::endl;
     s << "size "<< size() << std::endl;
     s << "res " << getResolution() << std::endl;
+    s << "depth " << getTreeDepth() << std::endl;
     s << "data" << std::endl;
 
     // write the actual data:
@@ -89,7 +90,7 @@ namespace octomap {
     // check if first line valid:
     std::string line;
     std::getline(s, line);
-    if (line.compare(0,fileHeader.length(), fileHeader) !=0){
+    if (line.compare(fileHeader) != 0 && line.compare(fileHeaderNoDepth) != 0){
       OCTOMAP_ERROR_STR("First line of OcTree file header does not start with \""<< fileHeader);
       return NULL;
     }
@@ -97,7 +98,8 @@ namespace octomap {
     std::string id;
     unsigned size;
     double res;
-    if (!AbstractOcTree::readHeader(s, id, size, res))
+    unsigned depth = 16;
+    if (!AbstractOcTree::readHeader(s, id, size, res, depth))
       return NULL;
 
 
@@ -105,6 +107,7 @@ namespace octomap {
     OCTOMAP_DEBUG_STR("Reading octree type "<< id);
 
     AbstractOcTree* tree = createTree(id, res);
+    tree->setTreeDepth(depth);
 
     if (tree){
       if (size > 0)
@@ -116,10 +119,13 @@ namespace octomap {
     return tree;
   }
 
-  bool AbstractOcTree::readHeader(std::istream& s, std::string& id, unsigned& size, double& res){
+  bool AbstractOcTree::readHeader(std::istream& s, std::string& id, unsigned& size, double& res, unsigned& depth){
     id = "";
     size = 0;
     res = 0.0;
+    // Pre-depth specification, the depth was hard-coded to 16
+    // Be backwards compatable by assuming a depth of 16 if none given
+    depth = 16;
 
     std::string token;
     bool headerRead = false;
@@ -146,6 +152,8 @@ namespace octomap {
         s >> res;
       else if (token == "size")
         s >> size;
+      else if (token == "depth")
+        s >> depth;
       else{
         OCTOMAP_WARNING_STR("Unknown keyword in OcTree header, skipping: "<<token);
         char c;
@@ -207,5 +215,6 @@ namespace octomap {
   }
 
 
-  const std::string AbstractOcTree::fileHeader = "# Octomap OcTree file";
+  const std::string AbstractOcTree::fileHeader = "# Octomap OcTree file (with depth)";
+  const std::string AbstractOcTree::fileHeaderNoDepth = "# Octomap OcTree file";
 }

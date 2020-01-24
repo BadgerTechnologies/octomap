@@ -60,7 +60,11 @@
 
 namespace octomap {
 
-  typedef uint16_t key_type;
+  using key_type = uint32_t;
+  static constexpr unsigned int KEY_BIT_WIDTH = sizeof(key_type)*8;
+  // Center of the key space, used as the origin of tree coordinates
+  static constexpr key_type KEY_CENTER = (1 << (KEY_BIT_WIDTH-1));
+
   
   /**
    * OcTreeKey is a container class for internal key addressing. The keys count the
@@ -182,6 +186,21 @@ namespace octomap {
   };
 
   /**
+   * Computes the center offset key at given depth
+   *
+   * @param[in] depth of center offset key to find
+   * @param[in] tree_center_key center key of the tree (also erroneously called tree_max_val)
+   */
+  inline key_type computeCenterOffsetKey(unsigned int depth, key_type center_key) {
+    if (depth + 1 >= KEY_BIT_WIDTH) {
+      // It is undefined in C++ to shift by any amount >= to the bit width of
+      // the type. Return zero in this case.
+      return 0;
+    }
+    return center_key >> (depth + 1);
+  }
+
+  /**
    * Computes the key of a child node while traversing the octree, given
    * child index and current key
    *
@@ -228,8 +247,11 @@ namespace octomap {
   inline OcTreeKey computeIndexKey(key_type level, const OcTreeKey& key) {
     if (level == 0)
       return key;
+    else if (level >= KEY_BIT_WIDTH)
+      // avoid undefined behavior with the bit shift below
+      return OcTreeKey(0,0,0);
     else {
-      key_type mask = 65535 << level;
+      key_type mask = std::numeric_limits<key_type>::max() << level;
       OcTreeKey result = key;
       result[0] &= mask;
       result[1] &= mask;

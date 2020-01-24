@@ -232,6 +232,7 @@ namespace octomap {
     float prob_miss_log;
     float occ_prob_thres_log;
 
+    static const std::string binaryFileHeaderNoDepth;
     static const std::string binaryFileHeader;
   };
 

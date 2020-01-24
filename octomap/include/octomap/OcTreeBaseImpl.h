@@ -58,13 +58,7 @@ namespace octomap {
   /**
    * OcTree base class, to be used with with any kind of OcTreeDataNode.
    *
-   * This tree implementation currently has a maximum depth of 16
-   * nodes. For this reason, coordinates values have to be, e.g.,
-   * below +/- 327.68 meters (2^15) at a maximum resolution of 0.01m.
-   *
-   * This limitation enables the use of an efficient key generation
-   * method which uses the binary representation of the data point
-   * coordinates.
+   * This tree implementation has a maximum depth limited by key_type
    *
    * \note You should probably not use this class directly, but
    * OcTreeBase or OccupancyOcTreeBase instead
@@ -111,9 +105,12 @@ namespace octomap {
     void setResolution(double r);
     inline double getResolution() const { return resolution; }
 
-    inline unsigned int getTreeDepth () const { return tree_depth; }
+    virtual unsigned int getTreeDepth () const { return tree_depth; }
+    /// Alter the tree depth. If the tree is not empty, the tree will be
+    /// altered to match the new depth, potentially discarding data.
+    virtual void setTreeDepth (unsigned int depth);
 
-    inline double getNodeSize(unsigned depth) const {assert(depth <= tree_depth); return sizeLookupTable[depth];}
+    inline double getNodeSize(unsigned depth) const {if(depth > tree_depth) depth=tree_depth; return sizeLookupTable[depth];}
     
     /**
      * Clear KeyRay vector to minimize unneeded memory. This is only
@@ -397,9 +394,26 @@ namespace octomap {
     // Key / coordinate conversion functions
     //
 
+    // Always returns the key_type that would go with coordinate.
+    // The return value will be aligned to the correct depth if depth is non-negative.
+    // The return value will be wrapped if in_bounds is false.
+    // The other coordToKey methods build on this basic function
+    inline key_type coordToKeyAtDepthBoundsCheck(double coordinate, int depth=-1, bool* in_bounds=nullptr) const{
+      assert (depth == -1 || depth <= (int)tree_depth);
+      double tree_center = static_cast<double>(tree_max_val);
+      double scaled_coord = std::floor(resolution_factor * coordinate) + tree_center;
+      if (in_bounds)
+        *in_bounds = (scaled_coord >= 0.0 && scaled_coord < 2.0 * tree_center);
+      key_type keyval = static_cast<key_type>(scaled_coord);
+      if (depth >= 0 && depth < (int)tree_depth) {
+        keyval = adjustKeyAtDepth(keyval, depth);
+      }
+      return keyval;
+    }
+
     /// Converts from a single coordinate into a discrete key
     inline key_type coordToKey(double coordinate) const{
-      return ((int) floor(resolution_factor * coordinate)) + tree_max_val;
+      return coordToKeyAtDepthBoundsCheck(coordinate);
     }
 
     /// Converts from a single coordinate into a discrete key at a given depth
@@ -441,10 +455,9 @@ namespace octomap {
      * @return Key for the new depth level
      */
     inline OcTreeKey adjustKeyAtDepth(const OcTreeKey& key, unsigned int depth) const{
-      if (depth == tree_depth)
+      if (depth >= tree_depth)
         return key;
 
-      assert(depth <= tree_depth);
       return OcTreeKey(adjustKeyAtDepth(key[0], depth), adjustKeyAtDepth(key[1], depth), adjustKeyAtDepth(key[2], depth));
     }
 
@@ -504,7 +517,7 @@ namespace octomap {
      * Converts a single coordinate into a discrete addressing key, with boundary checking.
      *
      * @param coordinate 3d coordinate of a point
-     * @param key discrete 16 bit adressing key, result
+     * @param key discrete adressing key, result
      * @return true if coordinate is within the octree bounds (valid), false otherwise
      */
     bool coordToKeyChecked(double coordinate, key_type& key) const;
@@ -514,7 +527,7 @@ namespace octomap {
      *
      * @param coordinate 3d coordinate of a point
      * @param depth level of the key from the top
-     * @param key discrete 16 bit adressing key, result
+     * @param key discrete adressing key, result
      * @return true if coordinate is within the octree bounds (valid), false otherwise
      */
     bool coordToKeyChecked(double coordinate, unsigned depth, key_type& key) const;
@@ -565,7 +578,7 @@ namespace octomap {
      * Converts a single coordinate into a discrete addressing key, clamping to the boundary.
      *
      * @param coordinate 3d coordinate of a point
-     * @param key discrete 16 bit adressing key, result
+     * @param key discrete adressing key, result
      * @return true if coordinate is within the octree bounds (valid), false otherwise
      */
     void coordToKeyClamped(double coordinate, key_type& key) const;
@@ -575,7 +588,7 @@ namespace octomap {
      *
      * @param coordinate 3d coordinate of a point
      * @param depth level of the key from the top
-     * @param key discrete 16 bit adressing key, result
+     * @param key discrete adressing key, result
      * @return true if coordinate is within the octree bounds (valid), false otherwise
      */
     void coordToKeyClamped(double coordinate, unsigned depth, key_type& key) const;
@@ -588,7 +601,7 @@ namespace octomap {
     /// converts from a discrete key at the lowest tree level into a coordinate
     /// corresponding to the key's center
     inline double keyToCoord(key_type key) const{
-      return (double( (int) key - (int) this->tree_max_val ) +0.5) * this->resolution;
+      return (double(key) - double(this->tree_max_val) + 0.5) * this->resolution;
     }
 
     /// converts from an addressing key at the lowest tree level into a coordinate
@@ -670,9 +683,9 @@ namespace octomap {
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 
-    // constants of the tree
-    const unsigned int tree_depth; ///< Maximum tree depth is fixed to 16 currently
-    const unsigned int tree_max_val;
+    // parameters of the tree
+    unsigned int tree_depth;
+    key_type tree_max_val;  ///< really center value, derived from tree_depth, for convenience
     double resolution;  ///< in meters
     double resolution_factor; ///< = 1. / resolution
   

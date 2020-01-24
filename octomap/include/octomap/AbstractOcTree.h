@@ -71,6 +71,8 @@ namespace octomap {
     virtual void getMetricMax(double& x, double& y, double& z) = 0;
     virtual void getMetricMax(double& x, double& y, double& z) const = 0;
     virtual void getMetricSize(double& x, double& y, double& z) = 0;
+    virtual unsigned int getTreeDepth() const = 0;
+    virtual void setTreeDepth(unsigned int depth) = 0;
 
     virtual void prune() = 0;
     virtual void expand() = 0;
@@ -149,10 +151,11 @@ namespace octomap {
     static std::map<std::string, AbstractOcTree*>& classIDMapping();
 
   protected:
-    static bool readHeader(std::istream &s, std::string& id, unsigned& size, double& res);
+    static bool readHeader(std::istream &s, std::string& id, unsigned& size, double& res, unsigned& depth);
     static void registerTreeType(AbstractOcTree* tree);
 
     static const std::string fileHeader;
+    static const std::string fileHeaderNoDepth;
   };
 
 

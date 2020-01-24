@@ -53,9 +53,9 @@ int main(int /*argc*/, char** /*argv*/) {
         }
       }
     }
-    // node + 1 branch of depth 16
+    // node + 1 branch of tree depth
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(tree.size(), 17);
+    EXPECT_EQ(tree.size(), tree.getTreeDepth() + 1);
     // create diagonal neighbor in same parent node
     OcTreeKey singleKey2 = singleKey;
     singleKey2[0] +=1;
@@ -83,7 +83,7 @@ int main(int /*argc*/, char** /*argv*/) {
       }
     }
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(tree.size(), 18); // one more leaf at lowest level
+    EXPECT_EQ(tree.size(), tree.getTreeDepth() + 2); // one more leaf at lowest level
     // pruning should do nothing:
     tree.prune();
     for (key[2] = singleKey[2] - 1; key[2] <= singleKey[2] + 1; ++key[2]){
@@ -105,7 +105,7 @@ int main(int /*argc*/, char** /*argv*/) {
       }
     }
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(tree.size(), 18);
+    EXPECT_EQ(tree.size(), 2 + tree.getTreeDepth());
 
     //tree.write("pruning_test_out0.ot");
 
@@ -115,10 +115,10 @@ int main(int /*argc*/, char** /*argv*/) {
     tree.updateNode(OcTreeKey(singleKey[0]+0, singleKey[1]+1, singleKey[2]+0), true);
     tree.updateNode(OcTreeKey(singleKey[0]+0, singleKey[1]+0, singleKey[2]+1), true);
     tree.updateNode(OcTreeKey(singleKey[0]+1, singleKey[1]+0, singleKey[2]+1), true);
-    EXPECT_EQ(tree.size(), 23);
+    EXPECT_EQ(tree.size(), 7 + tree.getTreeDepth());
     // last node should trigger auto-pruning:
     OcTreeNode* prunedNode = tree.updateNode(OcTreeKey(singleKey[0]+0, singleKey[1]+1, singleKey[2]+1), true);
-    EXPECT_EQ(tree.size(), 16);
+    EXPECT_EQ(tree.size(), tree.getTreeDepth());
     // all queries should now end up at same parent node:
     OcTreeNode* parentNode = tree.search(singleKey);
     OcTreeNode* parentNode2 = tree.search(singleKey2);
@@ -139,16 +139,16 @@ int main(int /*argc*/, char** /*argv*/) {
       }
     }
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(27, tree.size());
+    EXPECT_EQ(2 * tree.getTreeDepth() - 5, tree.size());
     // TODO: replace with test for lazy eval?
     tree.prune();
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(27, tree.size());
+    EXPECT_EQ(2 * tree.getTreeDepth() - 5, tree.size());
     tree.expand();
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(37483, tree.size());
+    EXPECT_EQ(37451 + 2 * tree.getTreeDepth(), tree.size());
     tree.prune();
-    EXPECT_EQ(27, tree.size());
+    EXPECT_EQ(2 * tree.getTreeDepth() - 5, tree.size());
     // test expansion:
     for (float x=0.005f; x <= 0.32f; x+=res){
       for (float y=0.005f; y <= 0.32f; y+=res){
@@ -174,14 +174,14 @@ int main(int /*argc*/, char** /*argv*/) {
       }
     }
     EXPECT_EQ(tree.calcNumNodes(), tree.size());
-    EXPECT_EQ(67, tree.size());
+    EXPECT_EQ(35 + 2 * tree.getTreeDepth(), tree.size());
     
     // test deletion / pruning of single nodes
     {
       std::cout << "\nCreating / deleting nodes\n===============================\n";
       size_t initialSize = tree.size();
       EXPECT_EQ(initialSize, tree.calcNumNodes());
-      EXPECT_EQ(initialSize, 67);
+      EXPECT_EQ(initialSize, 35 + 2 * tree.getTreeDepth());
             
       point3d newCoord(-2.0, -2.0, -2.0);
       OcTreeNode* newNode = tree.updateNode(newCoord, true);
@@ -190,7 +190,7 @@ int main(int /*argc*/, char** /*argv*/) {
       size_t insertedSize = tree.size();
       std::cout << "Size after one insertion: " << insertedSize << std::endl;
       EXPECT_EQ(insertedSize, tree.calcNumNodes());
-      EXPECT_EQ(insertedSize, 83);
+      EXPECT_EQ(insertedSize, 35 + 3 * tree.getTreeDepth());
       
       // find parent of newly inserted node:
       OcTreeNode* parentNode = tree.search(newCoord, tree.getTreeDepth() -1);
