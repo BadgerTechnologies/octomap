@@ -58,7 +58,7 @@ void getLeafNodesRecurs(std::list<OcTreeVolume>& voxels,
     }
     else {
       if (tree->isNodeOccupied(node) == occupied){
-        double voxelSize = tree->getResolution() * pow(2., double(16 - depth));
+        double voxelSize = tree->getResolution() * pow(2., double(tree->getTreeDepth() - depth));
         voxels.push_back(std::make_pair(parent_center - tree_center, voxelSize));
 
       }
@@ -88,7 +88,7 @@ void getVoxelsRecurs(std::list<OcTreeVolume>& voxels,
         }
       } // depth
     }
-    double voxelSize = tree->getResolution() * pow(2., double(16 - depth));
+    double voxelSize = tree->getResolution() * pow(2., double(tree->getTreeDepth() - depth));
     voxels.push_back(std::make_pair(parent_center - tree_center, voxelSize));
   }
 }
@@ -215,14 +215,13 @@ int main(int argc, char** argv) {
   //##############################################################     
 
   string btFilename = "";
-  unsigned char maxDepth = 16;
+  unsigned char maxDepth = KEY_BIT_WIDTH;
 
 
   // test timing:
   timeval start;
   timeval stop;
-  const unsigned char tree_depth(16);
-  const unsigned int tree_max_val(32768);
+  const unsigned char tree_depth(KEY_BIT_WIDTH);
   double time_it, time_depr;
 
   if (argc <= 1|| argc >3 || strcmp(argv[1], "-h") == 0){
@@ -233,7 +232,7 @@ int main(int argc, char** argv) {
   if (argc > 2){
     maxDepth = (unsigned char)atoi(argv[2]);
   }
-  maxDepth = std::min((unsigned char)16,maxDepth);
+  maxDepth = std::min((unsigned char)KEY_BIT_WIDTH,maxDepth);
 
   if (maxDepth== 0)
     maxDepth = tree_depth;
@@ -310,8 +309,9 @@ int main(int argc, char** argv) {
    * get all occupied leafs
    */
   point3d tree_center;
+  key_type center_key = tree->coordToKey(0.0);
   tree_center(0) = tree_center(1) = tree_center(2)
-              = (float) (((double) tree_max_val) * tree->getResolution());
+              = (float) (((double) center_key) * tree->getResolution());
 
   gettimeofday(&start, NULL);  // start timer
   getLeafNodesRecurs(list_depr,maxDepth,tree->getRoot(), 0, tree_center, tree_center, tree, true);

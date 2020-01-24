@@ -43,7 +43,7 @@ ViewerGui::ViewerGui(const std::string& filename, QWidget *parent, unsigned int 
   m_trajectoryDrawer(NULL), m_pointcloudDrawer(NULL),
   m_cameraFollowMode(NULL),
   m_octreeResolution(0.1), m_laserMaxRange(-1.), m_occupancyThresh(0.5),
-  m_max_tree_depth(initDepth > 0 && initDepth <= 16 ? initDepth : 16), 
+  m_max_tree_depth(initDepth > 0 && initDepth <= KEY_BIT_WIDTH ? initDepth : KEY_BIT_WIDTH),
   m_laserType(LASERTYPE_SICK),
   m_cameraStored(false),
   m_filename("") 
@@ -55,7 +55,7 @@ ViewerGui::ViewerGui(const std::string& filename, QWidget *parent, unsigned int 
 
   // Settings panel at the right side
   ViewerSettingsPanel* settingsPanel = new ViewerSettingsPanel(this);
-  settingsPanel->setTreeDepth(initDepth);
+  settingsPanel->setTreeDepth(m_max_tree_depth);
   QDockWidget* settingsDock = new QDockWidget("Octree / Scan graph settings", this);
   settingsDock->setWidget(settingsPanel);
   this->addDockWidget(Qt::RightDockWidgetArea, settingsDock);
@@ -119,6 +119,7 @@ ViewerGui::ViewerGui(const std::string& filename, QWidget *parent, unsigned int 
   connect(this, SIGNAL(changeNumberOfScans(unsigned)), settingsPanel, SLOT(setNumberOfScans(unsigned)));
   connect(this, SIGNAL(changeCurrentScan(unsigned)), settingsPanel, SLOT(setCurrentScan(unsigned)));
   connect(this, SIGNAL(changeResolution(double)), settingsPanel, SLOT(setResolution(double)));
+  connect(this, SIGNAL(changeTreeDepthMaximum(unsigned)), settingsPanel, SLOT(setTreeDepthMaximum(unsigned)));
 
   connect(settingsCameraPanel, SIGNAL(changeCamPosition(double, double, double, double, double, double)),
           m_glwidget, SLOT(setCamPosition(double, double, double, double, double, double)));
@@ -185,6 +186,21 @@ bool ViewerGui::getOctreeRecord(int id, OcTreeRecord*& otr) {
   }
 }
 
+unsigned int ViewerGui::getOctreeMaxDepth() {
+  unsigned int max_depth = KEY_BIT_WIDTH;
+  std::map<int, OcTreeRecord>::iterator it = m_octrees.begin();
+  if( it != m_octrees.end() ) {
+    // Only use the key bit width if there are no trees present
+    max_depth = it->second.octree->getTreeDepth();
+    ++it;
+  }
+  while( it != m_octrees.end() ) {
+    max_depth = std::max(max_depth, it->second.octree->getTreeDepth());
+    ++it;
+  }
+  return max_depth;
+}
+
 void ViewerGui::addOctree(octomap::AbstractOcTree* tree, int id, octomap::pose6d origin) {
   // is id in use?
       OcTreeRecord* r;
@@ -230,6 +246,8 @@ void ViewerGui::addOctree(octomap::AbstractOcTree* tree, int id, octomap::pose6d
         m_octrees[id] = otr;
         m_glwidget->addSceneObject(otr.octree_drawer);
       }
+      // Set the depth settings panel maximum to the max depth of all of the loaded trees
+      emit changeTreeDepthMaximum(getOctreeMaxDepth());
 }
 
 void ViewerGui::addOctree(octomap::AbstractOcTree* tree, int id) {
@@ -620,7 +638,7 @@ void ViewerGui::loadGraph(bool completeGraph) {
 
 void ViewerGui::changeTreeDepth(int depth){
   // range check:
-  if (depth < 1 || depth > 16)
+  if (depth < 1 || unsigned(depth) > KEY_BIT_WIDTH)
     return;
 
   m_max_tree_depth = unsigned(depth);

@@ -548,8 +548,25 @@ namespace octomap {
   void OccupancyOcTreeBase<NODE>::setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
                                                 bool maximum_only, bool delete_first,
                                                 CopyValueFunction copy_value_function){
-    setTreeValues(value_tree, NULL, maximum_only, delete_first, copy_value_function);
+    setTreeValues(
+        static_cast<const OccupancyOcTreeBase<NODE>*>(value_tree),
+        static_cast<const OccupancyOcTreeBase<NODE>*>(NULL),
+        maximum_only, delete_first, copy_value_function);
   }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::setTreeValues(OccupancyOcTreeBase<NODE>* value_tree,
+                                                bool maximum_only, bool delete_first,
+                                                CopyValueFunction copy_value_function){
+    if (value_tree && this->getTreeDepth() != value_tree->getTreeDepth()) {
+      value_tree->setTreeDepth(this->getTreeDepth());
+    }
+    setTreeValues(
+        static_cast<const OccupancyOcTreeBase<NODE>*>(value_tree),
+        static_cast<const OccupancyOcTreeBase<NODE>*>(NULL),
+        maximum_only, delete_first, copy_value_function);
+  }
+
 
   template <class NODE>
   void OccupancyOcTreeBase<NODE>::setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
@@ -557,6 +574,39 @@ namespace octomap {
                                                 bool maximum_only, bool delete_first,
                                                 CopyValueFunction copy_value_function){
     octomap::OcTreeKey root_key(this->tree_max_val, this->tree_max_val, this->tree_max_val);
+
+    // setTreeValues only makes sense when the trees have nearly the same resolution
+    if (value_tree && (this->getResolution() - value_tree->getResolution()) > 1e-6) {
+      OCTOMAP_ERROR_STR(
+          "setTreeValues: tree resolution mismatch with value tree: " <<
+          this->getResolution() << " != " <<
+          value_tree->getResolution());
+      return;
+    }
+    if (bounds_tree && (this->getResolution() - bounds_tree->getResolution()) > 1e-6) {
+      OCTOMAP_ERROR_STR(
+          "setTreeValues: tree resolution mismatch with bounds tree: " <<
+          this->getResolution() << " != " <<
+          bounds_tree->getResolution());
+      return;
+    }
+
+    // setTreeValues only works when the value_tree and bounds_tree have the
+    // same depth as this tree.
+    if (value_tree && this->getTreeDepth() != value_tree->getTreeDepth()) {
+      OCTOMAP_ERROR_STR(
+          "setTreeValues: tree depth mismatch with value tree: " <<
+          this->getTreeDepth() << "!= " <<
+          value_tree->getTreeDepth());
+      return;
+    }
+    if (bounds_tree && this->getTreeDepth() != bounds_tree->getTreeDepth()) {
+      OCTOMAP_ERROR_STR(
+          "setTreeValues: tree depth mismatch with bounds tree: " <<
+          this->getTreeDepth() << "!= " <<
+          bounds_tree->getTreeDepth());
+      return;
+    }
 
     // delete_first implies maximum_only = false.
     if (delete_first)
@@ -591,6 +641,23 @@ namespace octomap {
                                      maximum_only,
                                      delete_first,
                                      copy_value_function);
+  }
+
+  template <class NODE>
+  void OccupancyOcTreeBase<NODE>::setTreeValues(OccupancyOcTreeBase<NODE>* value_tree,
+                                                OccupancyOcTreeBase<NODE>* bounds_tree,
+                                                bool maximum_only, bool delete_first,
+                                                CopyValueFunction copy_value_function){
+    if (value_tree && this->getTreeDepth() != value_tree->getTreeDepth()) {
+      value_tree->setTreeDepth(this->getTreeDepth());
+    }
+    if (bounds_tree && this->getTreeDepth() != bounds_tree->getTreeDepth()) {
+      bounds_tree->setTreeDepth(this->getTreeDepth());
+    }
+    setTreeValues(
+        static_cast<const OccupancyOcTreeBase<NODE>*>(value_tree),
+        static_cast<const OccupancyOcTreeBase<NODE>*>(bounds_tree),
+        maximum_only, delete_first, copy_value_function);
   }
 
   template <class NODE>
@@ -653,7 +720,7 @@ namespace octomap {
             // set to delete_first and the value tree is empty here. In such a
             // case, there is no point in creating nodes just to delete them.
             if (this->nodeChildExists(node, i)) {
-              key_type center_offset_key = this->tree_max_val >> (depth + 1);
+              key_type center_offset_key = computeCenterOffsetKey(depth, this->tree_max_val);
               OcTreeKey child_key;
               computeChildKey(i, center_offset_key, key, child_key);
               NODE* rv = setTreeValuesRecurs(this->getNodeChild(node, i),
@@ -725,7 +792,7 @@ namespace octomap {
                                                       const CopyValueFunction& copy_value_function){
     if (node == NULL || value_tree == NULL || value_node == NULL)
       return;
-    key_type center_offset_key = this->tree_max_val >> (depth + 1);
+    key_type center_offset_key = computeCenterOffsetKey(depth, this->tree_max_val);
     OcTreeKey child_key;
     if (!value_tree->nodeHasChildren(value_node)) {
       // The value node has no children (its a leaf)

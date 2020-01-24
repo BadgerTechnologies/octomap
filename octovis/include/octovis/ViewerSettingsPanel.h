@@ -28,8 +28,9 @@
 #include <math.h>
 #include <QWidget>
 #include "ui_ViewerSettingsPanel.h"
+#include <octomap/OcTreeKey.h>
 
-#define _TREE_MAX_DEPTH 16
+#define _TREE_MAX_DEPTH (::octomap::KEY_BIT_WIDTH)
 
 class ViewerSettingsPanel : public QWidget
 {
@@ -44,6 +45,7 @@ public slots:
     void setCurrentScan(unsigned scan);
     void setResolution(double resolution);
     void setTreeDepth(int depth);
+    void setTreeDepthMaximum(unsigned int depth_maximum);
 
 private slots:
     void on_firstScanButton_clicked();

@@ -55,11 +55,7 @@ namespace octomap {
    * Each class used as NODE type needs to be derived from
    * OccupancyOcTreeNode.
    *
-   * This tree implementation has a maximum depth of 16. 
-   * At a resolution of 1 cm, values have to be < +/- 327.68 meters (2^15)
-   *
-   * This limitation enables the use of an efficient key generation 
-   * method which uses the binary representation of the data.
+   * This tree implementation has a maximum depth limited only by key_type
    *
    * \note The tree does not save individual points.
    *
@@ -156,12 +152,30 @@ namespace octomap {
       * It would be very inefficient to push potentially millions of
       * OcTreeKeys into a KeySet.
       *
+      * Note: this method will error-out if the value tree's depth is different
+      * than our depth.
+      *
       * @param value_tree   OccupancyOcTree containing the values to set.
       * @param maximum_only Only set a value from value_tree if it is bigger
       *                     than what is in our tree.
       * @param delete_first Deletes this tree first.
       */
      virtual void setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
+                                bool maximum_only = false,
+                                bool delete_first = false,
+                                CopyValueFunction copy_value_function = CopyValueFunction());
+
+     /**
+      * Set this tree's values from another tree.
+      *
+      * This version will alter the value_tree's depth to match our tree.
+      *
+      * @param value_tree   OccupancyOcTree containing the values to set.
+      * @param maximum_only Only set a value from value_tree if it is bigger
+      *                     than what is in our tree.
+      * @param delete_first Deletes this tree first.
+      */
+     virtual void setTreeValues(OccupancyOcTreeBase<NODE>* value_tree,
                                 bool maximum_only = false,
                                 bool delete_first = false,
                                 CopyValueFunction copy_value_function = CopyValueFunction());
@@ -183,6 +197,9 @@ namespace octomap {
       * It would be very inefficient to push potentially millions of
       * OcTreeKeys into a KeySet.
       *
+      * Note: this method will error-out if the value tree or bounds tree's
+      * depth is different than our depth.
+      *
       * @param value_tree   OccupancyOcTree containing the values to set
       * @param bounds_tree  OccupancyOcTree indicating bounds for setting
       * @param maximum_only Only set a value from value_tree if it is bigger
@@ -192,6 +209,35 @@ namespace octomap {
       */
      virtual void setTreeValues(const OccupancyOcTreeBase<NODE>* value_tree,
                                 const OccupancyOcTreeBase<NODE>* bounds_tree,
+                                bool maximum_only = false,
+                                bool delete_first = false,
+                                CopyValueFunction copy_value_function = CopyValueFunction());
+
+     /**
+      * Set this tree's values from another tree, using a third bounds tree.
+      * Only modifies the contents of this tree from the value_tree where the
+      * bounds_tree is defined. An application of this function is to update
+      * this tree from an accumulated update tree as the values tree and a
+      * separate tree that represents the bounding boxes of all the regions
+      * that have changed. Node pruning makes an OcTree an efficent mechanism
+      * to specify all the regions of interest. It is not possible to represent
+      * regions that should be erased in an OccupancyOcTreeBase with
+      * OcTreeDataNode's. Also, while a KeySet may seem a natural way of
+      * specifying the bounds, a KeySet only represents leaves at the maximum
+      * depth and has no opportunity for pruning nearby update regions.
+      *
+      * This version of setTreeValues will alter the depth of the value and/or
+      * bounds tree to match our tree.
+      *
+      * @param value_tree   OccupancyOcTree containing the values to set
+      * @param bounds_tree  OccupancyOcTree indicating bounds for setting
+      * @param maximum_only Only set a value from value_tree if it is bigger
+      *                     than what is in our tree.
+      * @param delete_first Deletes nodes inside the regions defined by the
+      *                     bounds_tree first.
+      */
+     virtual void setTreeValues(OccupancyOcTreeBase<NODE>* value_tree,
+                                OccupancyOcTreeBase<NODE>* bounds_tree,
                                 bool maximum_only = false,
                                 bool delete_first = false,
                                 CopyValueFunction copy_value_function = CopyValueFunction());
@@ -537,6 +583,8 @@ namespace octomap {
      **/
     void updateInnerOccupancy();
 
+    /// Get the overall log odds for the whole tree
+    float getTreeLogOdds() const { return this->root ? this->root->getLogOdds() : nanf(""); }
 
     /// integrate a "hit" measurement according to the tree's sensor model
     virtual void integrateHit(NODE* occupancyNode) const;

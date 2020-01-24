@@ -60,6 +60,14 @@ namespace octomap {
     inline unsigned int getCount() const { return getValue(); }
     inline void increaseCount() { value++; }
     inline void setCount(unsigned c) {this->setValue(c); }
+    inline void updateOccupancyChildren() {
+      value = 0;
+      for (unsigned int i=0; i<8; ++i) {
+        if (children[i] != NULL) {
+          value += static_cast<CountingOcTreeNode*>(children[i])->getCount();
+        }
+      }
+    }
 
   };
 
