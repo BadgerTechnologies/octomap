@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
 
 
   OcTree tree (0.05);  
+  key_type center_key = tree.coordToKey(0.0);
 
 
 
@@ -171,12 +172,12 @@ int main(int argc, char** argv) {
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, true));
   EXPECT_FALSE(cubeTree.search(end));
   EXPECT_FLOAT_EQ(end.x(), res_2);
-  EXPECT_FLOAT_EQ(end.y(), float(32768*res-res_2));
+  EXPECT_FLOAT_EQ(end.y(), float(center_key*res-res_2));
   EXPECT_FLOAT_EQ(end.z(), res_2);
   direction = point3d(-1.0f, 0.0f, 0.0f);
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, true));
   EXPECT_FALSE(cubeTree.search(end));
-  EXPECT_FLOAT_EQ(end.x(), float(-32767*res-res_2));
+  EXPECT_FLOAT_EQ(end.x(), float((-1.0)*((center_key-1)*res)-res_2));
   EXPECT_FLOAT_EQ(end.y(), res_2);
   EXPECT_FLOAT_EQ(end.z(), res_2);
 

@@ -28,6 +28,12 @@ ViewerSettingsPanel::ViewerSettingsPanel(QWidget *parent)
     : QWidget(parent), m_currentScan(0), m_numberScans(0), m_treeDepth(_TREE_MAX_DEPTH), m_resolution(0.1)
 {
 	ui.setupUi(this);
+  // Setup the tree depth UI elements with the correct upper limit for
+  // the maximum possible depth represented in the key_type
+  ui.treeDepth->setMaximum(m_treeDepth);
+  ui.treeDepth->setValue(m_treeDepth);
+  ui.treeDepthSlider->setMaximum(m_treeDepth);
+  ui.treeDepthSlider->setValue(m_treeDepth);
 	connect(ui.treeDepth, SIGNAL(valueChanged(int)), this, SLOT(setTreeDepth(int)));
 
 	scanProgressChanged();
@@ -119,7 +125,16 @@ void ViewerSettingsPanel::setTreeDepth(int depth){
   leafSizeChanged();
 }
 
+void ViewerSettingsPanel::setTreeDepthMaximum(unsigned int depth_maximum){
+  // If the tree depth is set higher than the new maximum, go ahead and set it to the maximum first.
+  if (m_treeDepth > depth_maximum){
+    setTreeDepth(depth_maximum);
+  }
+  ui.treeDepth->setMaximum(depth_maximum);
+  ui.treeDepthSlider->setMaximum(depth_maximum);
+}
+
 void ViewerSettingsPanel::leafSizeChanged(){
-  double leafSize = m_resolution * pow(2.0, (int) (_TREE_MAX_DEPTH-m_treeDepth));
+  double leafSize = m_resolution * pow(2.0, (int) (ui.treeDepth->maximum()-m_treeDepth));
   ui.leafSize->setText(QString::number(leafSize)+" m");
 }

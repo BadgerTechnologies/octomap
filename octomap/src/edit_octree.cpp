@@ -62,6 +62,7 @@ int main(int argc, char **argv)
 
     double scale = 1.0;
     double res = -1.0;
+    int depth = -1;
 
     if(argc == 1) show_help = true;
     for(int i = 1; i < argc && !show_help; i++) {
@@ -82,6 +83,7 @@ int main(int argc, char **argv)
 //        cout << "\t --bb <minx> <miny> <minz> <maxx> <maxy> <maxz>: force bounding box for OcTree" << endl;
         cout << "\t --res <resolution>: set ressolution of OcTree to new value\n";
         cout << "\t --scale <scale>: scale  octree resolution by a value\n";
+        cout << "\t --depth <depth>: set depth of OcTree to new value\n";
         exit(0);
     }
     
@@ -123,6 +125,11 @@ int main(int argc, char **argv)
         scale = atof(argv[i]);
 
         continue;
+      } else if (strcmp(argv[i], "--depth") == 0 && i < argc - 1) {
+        i++;
+        depth = atoi(argv[i]);
+
+        continue;
       } else if (strcmp(argv[i], "--offset") == 0 && i < argc - 4) {
         OCTOMAP_WARNING_STR(argv[i] << " not yet implemented!\n");
         i++;
@@ -148,6 +155,12 @@ int main(int argc, char **argv)
     if (!tree->readBinary(inputFilename)){
       OCTOMAP_ERROR("Could not open file, exiting.\n");
       exit(1);
+    }
+
+    // apply depth setting:
+    if (depth > 0 && unsigned(depth) <= KEY_BIT_WIDTH){
+      std::cout << "Setting new tree depth: " << depth << std::endl;
+      tree->setTreeDepth(depth);
     }
 
     // apply scale / resolution setting:

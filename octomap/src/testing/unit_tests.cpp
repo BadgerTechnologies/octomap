@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
       point_on_surface.rotate_IP (0,DEG2RAD(1.),0);
     }
     EXPECT_TRUE (tree.writeBinary("sphere_rays.bt"));
-    EXPECT_EQ ((int) tree.size(), 50615);
+    EXPECT_EQ (tree.size(), 50487 + 8 * tree.getTreeDepth());
   
   // ------------------------------------------------------------
   // ray casting is now in "test_raycasting.cpp"
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
   
     OcTree tree (0.05);
     tree.insertPointCloud(*measurement, origin);
-    EXPECT_EQ (tree.size(), 53959);
+    EXPECT_EQ (tree.size(), 53831 + 8 * tree.getTreeDepth());
 
     ScanGraph* graph = new ScanGraph();
     Pose6D node_pose (origin.x(), origin.y(), origin.z(),0.0f,0.0f,0.0f);
@@ -200,6 +200,63 @@ int main(int argc, char** argv) {
     EXPECT_FLOAT_EQ (0.025, p_inv.y());
     EXPECT_FLOAT_EQ (0.025, p_inv.z());
 
+  // ------------------------------------------------------------
+  } else if (test_name == "setTreeDepth") {
+    OcTree tree (0.05), tree2 (0.05);
+    point3d p(0.0,0.0,0.0);
+    OcTreeKey key;
+    tree.coordToKeyChecked(p, key);
+    tree.setNodeValueAtDepth(key, KEY_BIT_WIDTH/2 + 1, 1.0);
+    tree2.setNodeValueAtDepth(key, KEY_BIT_WIDTH/2 + 1, 1.0);
+    EXPECT_EQ(tree.size(), KEY_BIT_WIDTH/2 + 2);
+    EXPECT_EQ(tree.search(key, 1)->getValue(), 1.0);
+    EXPECT_EQ(tree.getTreeLogOdds(), 1.0);
+    tree.setTreeDepth(KEY_BIT_WIDTH/2);
+    EXPECT_EQ(tree.size(), 2);
+    tree.coordToKeyChecked(p, key);
+    EXPECT_EQ(tree.search(key, 1)->getValue(), 1.0);
+    EXPECT_EQ(tree.getTreeLogOdds(), 1.0);
+    tree.setTreeDepth(KEY_BIT_WIDTH);
+    EXPECT_EQ(tree.size(), KEY_BIT_WIDTH/2 + 2);
+    tree.coordToKeyChecked(p, key);
+    EXPECT_EQ(tree.search(key, 1)->getValue(), 1.0);
+    EXPECT_EQ(tree.getTreeLogOdds(), 1.0);
+    EXPECT_TRUE(tree == tree2);
+    tree.setNodeValueAtDepth(key, 0, 1.0);
+    EXPECT_EQ(tree.size(), 1);
+    tree.setTreeDepth(KEY_BIT_WIDTH-1);
+    EXPECT_EQ(tree.size(), 1);
+    tree.setTreeDepth(KEY_BIT_WIDTH/2);
+    EXPECT_EQ(tree.size(), 1);
+    tree.setTreeDepth(5);
+    EXPECT_EQ(tree.size(), 1);
+    tree.setTreeDepth(KEY_BIT_WIDTH);
+    EXPECT_EQ(tree.size(), 1 + 8*(KEY_BIT_WIDTH-5+1));
+    tree.clear();
+    tree.coordToKeyChecked(p, key);
+    tree.setNodeValueAtDepth(key, KEY_BIT_WIDTH-3, 3.0);
+    key[0] -= 1;
+    tree.setNodeValueAtDepth(key, KEY_BIT_WIDTH-2, 2.0);
+    key[2] -= 7;
+    tree.setNodeValueAtDepth(key, KEY_BIT_WIDTH-1, 1.0);
+    EXPECT_EQ(tree.getTreeLogOdds(), 3.0);
+    OcTree old_tree (tree);
+    tree.setTreeDepth(4);
+    EXPECT_EQ(tree.getTreeLogOdds(), 3.0);
+    tree.setTreeDepth(KEY_BIT_WIDTH/2);
+    EXPECT_EQ(tree.getTreeLogOdds(), 3.0);
+    tree.setTreeDepth(KEY_BIT_WIDTH);
+    EXPECT_EQ(tree.getTreeLogOdds(), 3.0);
+    EXPECT_TRUE(old_tree == tree);
+    tree.setTreeDepth(2);
+    EXPECT_EQ(tree.getTreeLogOdds(), 3.0);
+    tree.setTreeDepth(KEY_BIT_WIDTH);
+    tree.clear();
+    point3d p2(-1.0, -1.0, -1.0);
+    tree.coordToKeyChecked(p2, key);
+    tree.setNodeValueAtDepth(key, KEY_BIT_WIDTH-3, 3.0);
+    tree.setTreeDepth(1);
+    EXPECT_EQ(tree.size(), 0);
   // ------------------------------------------------------------
   } else {
     std::cerr << "Invalid test name specified: " << test_name << std::endl;

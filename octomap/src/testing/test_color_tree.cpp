@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   // should already be pruned
   EXPECT_EQ(tree.size(), tree.calcNumNodes()); 
   const size_t initialSize = tree.size();
-  EXPECT_EQ(initialSize, 1034);
+  EXPECT_EQ(initialSize, 906 + 8 * tree.getTreeDepth());
   tree.prune();
   EXPECT_EQ(tree.size(), tree.calcNumNodes()); 
   EXPECT_EQ(initialSize, tree.size());

@@ -82,6 +82,7 @@ namespace octomap {
     s << "id " << this->getTreeType() << std::endl;
     s << "size "<< this->size() << std::endl;
     s << "res " << this->getResolution() << std::endl;
+    s << "depth " << this->getTreeDepth() << std::endl;
     s << "data" << std::endl;
 
     writeBinaryData(s);
@@ -144,9 +145,10 @@ namespace octomap {
     std::getline(s, line);
     unsigned size;
     double res;
-    if (line.compare(0,AbstractOccupancyOcTree::binaryFileHeader.length(), AbstractOccupancyOcTree::binaryFileHeader) ==0){
+    unsigned depth = 16;
+    if (line.compare(binaryFileHeader) == 0 || line.compare(binaryFileHeaderNoDepth) == 0){
       std::string id;
-      if (!AbstractOcTree::readHeader(s, id, size, res))
+      if (!AbstractOcTree::readHeader(s, id, size, res, depth))
         return false;
       
       OCTOMAP_DEBUG_STR("Reading binary octree type "<< id);
@@ -165,6 +167,7 @@ namespace octomap {
     // otherwise: values are valid, stream is now at binary data!
     this->clear();
     this->setResolution(res);
+    this->setTreeDepth(depth);
     
     if (size > 0)
       this->readBinaryData(s);
@@ -177,5 +180,6 @@ namespace octomap {
     return true;
   }
 
-  const std::string AbstractOccupancyOcTree::binaryFileHeader = "# Octomap OcTree binary file";
+  const std::string AbstractOccupancyOcTree::binaryFileHeaderNoDepth = "# Octomap OcTree binary file";
+  const std::string AbstractOccupancyOcTree::binaryFileHeader = "# Octomap OcTree binary file (with depth)";
 }

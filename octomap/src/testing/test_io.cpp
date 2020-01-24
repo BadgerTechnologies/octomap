@@ -22,6 +22,8 @@ int main(int argc, char** argv) {
   //empty tree
   {
     OcTree emptyTree(0.999);
+    // test setting the depth to something other than the default.
+    emptyTree.setTreeDepth(7);
     EXPECT_EQ(emptyTree.size(), 0);
     EXPECT_TRUE(emptyTree.writeBinary("empty.bt"));
     EXPECT_TRUE(emptyTree.write("empty.ot"));
@@ -81,6 +83,7 @@ int main(int argc, char** argv) {
     std::cout << "    Swap\n";
     // test swap:
     OcTree emptyT(tree.getResolution());
+    emptyT.setTreeDepth(tree.getTreeDepth());
     OcTree emptySw(emptyT);
     OcTree otherSw(tree);
     emptySw.swapContent(otherSw);
