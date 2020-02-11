@@ -129,12 +129,12 @@ namespace octomap {
 
 
   void Pointcloud::calcBBX(point3d& lowerBound, point3d& upperBound) const {
-    float min_x, min_y, min_z;
-    float max_x, max_y, max_z;
+    double min_x, min_y, min_z;
+    double max_x, max_y, max_z;
     min_x = min_y = min_z = 1e6;
     max_x = max_y = max_z = -1e6;
 
-    float x,y,z;
+    double x,y,z;
 
     for (Pointcloud::const_iterator it=begin(); it!=end(); it++) {
 
@@ -160,9 +160,9 @@ namespace octomap {
 
     Pointcloud result;
 
-    float min_x, min_y, min_z;
-    float max_x, max_y, max_z;
-    float x,y,z;
+    double min_x, min_y, min_z;
+    double max_x, max_y, max_z;
+    double x,y,z;
 
     min_x = lowerBound(0); min_y = lowerBound(1); min_z = lowerBound(2);
     max_x = upperBound(0); max_y = upperBound(1); max_z = upperBound(2);
@@ -191,7 +191,7 @@ namespace octomap {
   void Pointcloud::minDist(double thres) {
     Pointcloud result;
 
-    float x,y,z;
+    double x,y,z;
     for (Pointcloud::const_iterator it=begin(); it!=end(); it++) {
       x = (*it)(0);
       y = (*it)(1);

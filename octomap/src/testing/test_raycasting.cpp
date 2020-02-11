@@ -20,8 +20,8 @@ int main(int argc, char** argv) {
 
 
   //  point3d origin (10.01, 10.01, 10.02);
-  point3d origin (0.01f, 0.01f, 0.02f);
-  point3d point_on_surface (2.01f, 0.01f, 0.01f);
+  point3d origin (0.01, 0.01, 0.02);
+  point3d point_on_surface (2.01, 0.01, 0.01);
 
   cout << "Generating sphere at " << origin << " ..." << endl;
 
@@ -91,10 +91,10 @@ int main(int argc, char** argv) {
   cout << "generating single rays..." << endl;
   OcTree single_beams(0.03333);
   int num_beams = 17;
-  float beamLength = 10.0f;
-  point3d single_origin (1.0f, 0.45f, 0.45f);
-  point3d single_origin_top (1.0f, 0.45f, 1.0);
-  point3d single_endpoint(beamLength, 0.0f, 0.0f);
+  double beamLength = 10.0;
+  point3d single_origin (1.0, 0.45, 0.45);
+  point3d single_origin_top (1.0, 0.45, 1.0);
+  point3d single_endpoint(beamLength, 0.0, 0.0);
 	
 	
   for (int i=0; i<num_beams; i++) {    
@@ -118,9 +118,9 @@ int main(int argc, char** argv) {
   double res_2 = res/2.0;
   OcTree cubeTree(res);
   // fill a cube with "free", end is "occupied":
-  for (float x=-0.95f; x <= 1.0f; x+=float(res)){
-    for (float y=-0.95f; y <= 1.0f; y+= float(res)){
-      for (float z=-0.95f; z <= 1.0f; z+= float(res)){
+  for (double x=-0.95; x <= 1.0; x+=res){
+    for (double y=-0.95; y <= 1.0; y+= res){
+      for (double z=-0.95; z <= 1.0; z+= res){
         if (x < 0.9){
           EXPECT_TRUE(cubeTree.updateNode(point3d(x,y,z), false));
         } else{
@@ -137,10 +137,10 @@ int main(int argc, char** argv) {
   EXPECT_TRUE(cubeTree.updateNode(-3*res_2,res_2,-res_2, true));
 
   cubeTree.writeBinary("raycasting_cube.bt");
-  origin = point3d(0.0f, 0.0f, 0.0f);
+  origin = point3d(0.0, 0.0, 0.0);
   point3d end;
   // hit the corner:
-  direction = point3d(0.95f, 0.95f, 0.95f);
+  direction = point3d(0.95, 0.95, 0.95);
   EXPECT_TRUE(cubeTree.castRay(origin, direction, end, false));
   EXPECT_TRUE(cubeTree.isNodeOccupied(cubeTree.search(end)));
   std::cout << "Hit occupied voxel: " << end << std::endl;
@@ -151,8 +151,8 @@ int main(int argc, char** argv) {
   EXPECT_NEAR(1.0, (origin - end).norm(), res_2);
 
   // hit bottom:
-  origin = point3d(float(res_2), float(res_2), 0.5f);
-  direction = point3d(0.0, 0.0, -1.0f);
+  origin = point3d(res_2, res_2, 0.5);
+  direction = point3d(0.0, 0.0, -1.0);
   EXPECT_TRUE(cubeTree.castRay(origin, direction, end, false));
   EXPECT_TRUE(cubeTree.isNodeOccupied(cubeTree.search(end)));
   std::cout << "Hit voxel: " << end << std::endl;
@@ -162,26 +162,36 @@ int main(int argc, char** argv) {
 
 
   // hit boundary of unknown:
-  origin = point3d(0.0f, 0.0f, 0.0f);
-  direction = point3d(0.0f, 1.0f, 0.0f);
+  origin = point3d(0.0, 0.0, 0.0);
+  direction = point3d(0.0, 1.0, 0.0);
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, false));
   EXPECT_FALSE(cubeTree.search(end));
   std::cout << "Boundary unknown hit: " << end << std::endl;
 
   // hit boundary of octree:
+  OcTreeKey origin_key;
+  cubeTree.coordToKeyClamped(point3d(0.0, std::numeric_limits<double>::max(), 0.0), origin_key);
+  // move away from the edge a bit
+  origin_key[1]-=10;
+  origin = cubeTree.keyToCoord(origin_key);
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, true));
   EXPECT_FALSE(cubeTree.search(end));
   EXPECT_FLOAT_EQ(end.x(), res_2);
-  EXPECT_FLOAT_EQ(end.y(), float(center_key*res-res_2));
+  EXPECT_FLOAT_EQ(end.y(), center_key*res-res_2);
   EXPECT_FLOAT_EQ(end.z(), res_2);
-  direction = point3d(-1.0f, 0.0f, 0.0f);
+  cubeTree.coordToKeyClamped(point3d(-std::numeric_limits<double>::max(), 0.0, 0.0), origin_key);
+  // move away from the edge a bit
+  origin_key[0]+=10;
+  origin = cubeTree.keyToCoord(origin_key);
+  direction = point3d(-1.0, 0.0, 0.0);
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, true));
   EXPECT_FALSE(cubeTree.search(end));
-  EXPECT_FLOAT_EQ(end.x(), float((-1.0)*((center_key-1)*res)-res_2));
+  EXPECT_FLOAT_EQ(end.x(), (-1.0)*((center_key-1)*res)-res_2);
   EXPECT_FLOAT_EQ(end.y(), res_2);
   EXPECT_FLOAT_EQ(end.z(), res_2);
 
   // test maxrange:
+  origin = point3d(0.0, 0.0, 0.0);
   EXPECT_FALSE(cubeTree.castRay(origin, direction, end, true, 0.9));
   std::cout << "Max range endpoint: " << end << std::endl;
   OcTreeNode* endPt = cubeTree.search(end);

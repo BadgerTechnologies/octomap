@@ -93,7 +93,7 @@ namespace octomap {
       std::string poseStr;
       ok = readTagValue("MAPNODEPOSE", infile, &poseStr);
       std::istringstream poseStream(poseStr);
-      float x,y,z;
+      double x,y,z;
       poseStream >> x >> y >> z;
       double roll,pitch,yaw;
       poseStream >> roll >> pitch >> yaw;
@@ -161,7 +161,7 @@ namespace octomap {
   }
 
   template <class MAPNODE>
-  bool MapCollection<MAPNODE>::isOccupied(float x, float y, float z) const {
+  bool MapCollection<MAPNODE>::isOccupied(double x, double y, double z) const {
     point3d q(x,y,z);
     return this->isOccupied(q);
   }

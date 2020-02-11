@@ -58,7 +58,7 @@ namespace octomap {
     void clear();
     inline void reserve(size_t size) {points.reserve(size); }
 
-    inline void push_back(float x, float y, float z) {
+    inline void push_back(double x, double y, double z) {
       points.push_back(point3d(x,y,z));
     }
     inline void push_back(const point3d& p) {

@@ -168,7 +168,7 @@ namespace octomap {
     resolution_factor = 1. / resolution;
 
     tree_center(0) = tree_center(1) = tree_center(2)
-      = (float) (((double) tree_max_val) / resolution_factor);
+      = (((double) tree_max_val) / resolution_factor);
 
     // init node size lookup table:
     sizeLookupTable.resize(tree_depth+1);
@@ -817,7 +817,7 @@ namespace octomap {
     // Initialization phase -------------------------------------------------------
 
     point3d direction = (end - origin);
-    float length = (float) direction.norm();
+    double length = direction.norm();
     direction /= length; // normalize vector
 
     int    step[3];
@@ -836,7 +836,7 @@ namespace octomap {
       if (step[i] != 0) {
         // corner point of voxel (in direction of ray)
         double voxelBorder = this->keyToCoord(current_key[i]);
-        voxelBorder += (float) (step[i] * this->resolution * 0.5);
+        voxelBorder += (step[i] * this->resolution * 0.5);
 
         tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
         tDelta[i] = this->resolution / fabs( direction(i) );
@@ -1440,9 +1440,9 @@ namespace octomap {
     point3d pmin_clamped = this->keyToCoord(this->coordToKey(pmin, depth), depth);
     point3d pmax_clamped = this->keyToCoord(this->coordToKey(pmax, depth), depth);
 
-    float diff[3];
+    double diff[3];
     unsigned int steps[3];
-    float step_size = this->resolution * pow(2, tree_depth-depth);
+    double step_size = this->resolution * pow(2, tree_depth-depth);
     for (int i=0;i<3;++i) {
       diff[i] = pmax_clamped(i) - pmin_clamped(i);
       steps[i] = floor(diff[i] / step_size);

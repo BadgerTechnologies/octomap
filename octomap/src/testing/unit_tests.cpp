@@ -56,11 +56,11 @@ int main(int argc, char** argv) {
   // ------------------------------------------------------------
   } else if (test_name == "MathPose") {
     // constructors  
-    Pose6D a (1.0f, 0.1f, 0.1f, 0.0f, 0.1f, (float) M_PI/4. );
+    Pose6D a (1.0, 0.1, 0.1, 0.0, 0.1, M_PI/4. );
     Pose6D b;
 
-    Vector3 trans(1.0f, 0.1f, 0.1f);
-    Quaternion rot(0.0f, 0.1f, (float) M_PI/4.);
+    Vector3 trans(1.0, 0.1, 0.1);
+    Quaternion rot(0.0, 0.1, M_PI/4.);
     Pose6D c(trans, rot);
 
     // comparator
@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
     tree.setProbHit(0.7);
     tree.setProbMiss(0.4);
 
-    point3d origin (0.01f, 0.01f, 0.02f);
-    point3d point_on_surface (2.01f,0.01f,0.01f);
+    point3d origin (0.01, 0.01, 0.02);
+    point3d point_on_surface (2.01,0.01,0.01);
   
     for (int i=0; i<360; i++) {    
       for (int j=0; j<360; j++) {
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
       point_on_surface.rotate_IP (0,DEG2RAD(1.),0);
     }
     EXPECT_TRUE (tree.writeBinary("sphere_rays.bt"));
-    EXPECT_EQ (tree.size(), 50487 + 8 * tree.getTreeDepth());
+    EXPECT_EQ (tree.size(), 50493 + 8 * tree.getTreeDepth());
   
   // ------------------------------------------------------------
   // ray casting is now in "test_raycasting.cpp"
@@ -125,8 +125,8 @@ int main(int argc, char** argv) {
   } else if (test_name == "InsertScan") {
     Pointcloud* measurement = new Pointcloud();
   
-    point3d origin (0.01f, 0.01f, 0.02f);
-    point3d point_on_surface (2.01f, 0.01f, 0.01f);
+    point3d origin (0.01, 0.01, 0.02);
+    point3d point_on_surface (2.01, 0.01, 0.01);
   
     for (int i=0; i<360; i++) {
       for (int j=0; j<360; j++) {
@@ -139,10 +139,10 @@ int main(int argc, char** argv) {
   
     OcTree tree (0.05);
     tree.insertPointCloud(*measurement, origin);
-    EXPECT_EQ (tree.size(), 53831 + 8 * tree.getTreeDepth());
+    EXPECT_EQ (tree.size(), 53837 + 8 * tree.getTreeDepth());
 
     ScanGraph* graph = new ScanGraph();
-    Pose6D node_pose (origin.x(), origin.y(), origin.z(),0.0f,0.0f,0.0f);
+    Pose6D node_pose (origin.x(), origin.y(), origin.z(),0.0,0.0,0.0);
     graph->addNode(measurement, node_pose);
     EXPECT_TRUE (graph->writeBinary("test.graph"));
     delete graph;
@@ -160,11 +160,11 @@ int main(int argc, char** argv) {
     for (int x=-20; x<20; x++) 
       for (int y=-20; y<20; y++) 
         for (int z=-20; z<20; z++) {
-          point3d p ((float) x*0.05f+0.01f, (float) y*0.05f+0.01f, (float) z*0.05f+0.01f);
+          point3d p (x*0.05+0.01, y*0.05+0.01, z*0.05+0.01);
           stamped_tree.updateNode(p, true); // integrate 'occupied' measurement 
         }
     // test if update times set
-    point3d query (0.1f, 0.1f, 0.1f);
+    point3d query (0.1, 0.1, 0.1);
     OcTreeNodeStamped* result = stamped_tree.search (query);
     EXPECT_TRUE (result);
     unsigned int tree_time = stamped_tree.getLastUpdateTime();
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     stamped_tree.integrateMissNoTime(result);  // reduce occupancy, no time update
     std::cout << "After 2nd update (single miss): Tree time " <<tree_time << "; node(0.1, 0.1, 0.1) time " << node_time << std::endl;
     EXPECT_EQ  (node_time, result->getTimestamp()); // node time updated?
-    point3d query2 = point3d  (0.1f, 0.1f, 0.3f);
+    point3d query2 = point3d  (0.1, 0.1, 0.3);
     stamped_tree.updateNode(query2, true); // integrate 'occupied' measurement
     OcTreeNodeStamped* result2 = stamped_tree.search (query2);
     EXPECT_TRUE (result2);

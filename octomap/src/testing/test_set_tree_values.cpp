@@ -7,7 +7,7 @@ using namespace octomap;
 using namespace octomath;
 
 int main(int argc, char** argv) {
-    float res = 0.01f;
+    double res = 0.01;
     OcTree value_tree(res);
     OcTree value_tree2(res);
     OcTree bounds_tree(res);
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     value_tree.clear();
 
     // Now, test with one leaf in our tree
-    point3d singlePt(-0.05f, -0.02f, 1.0f);
+    point3d singlePt(-0.05, -0.02, 1.0);
     OcTreeKey singleKey, nextKey;
     tree.coordToKeyChecked(singlePt, singleKey);
     tree.updateNode(singleKey, true);

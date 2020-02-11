@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   for (int x=-20; x<20; x++) {
     for (int y=-20; y<20; y++) {
       for (int z=-20; z<20; z++) {
-        point3d endpoint ((float) x*0.05f, (float) y*0.05f, (float) z*0.05f);
+        point3d endpoint (x*0.05, y*0.05, z*0.05);
         tree.updateNode(endpoint, true); // integrate 'occupied' measurement
       }
     }
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   for (int x=-30; x<30; x++) {
     for (int y=-30; y<30; y++) {
       for (int z=-30; z<30; z++) {
-        point3d endpoint ((float) x*0.02f-1.0f, (float) y*0.02f-1.0f, (float) z*0.02f-1.0f);
+        point3d endpoint (x*0.02-1.0, y*0.02-1.0, z*0.02-1.0);
         tree.updateNode(endpoint, false);  // integrate 'free' measurement
       }
     }
@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
   point3d query;
   OcTreeNode* result = NULL;
 
-  for(float z = -0.6f; z < -0.21f; z += 0.1f){
-    for(float y = -0.6f; y < -0.21f; y += 0.1f){
-      for(float x = -0.6f; x < -0.21f; x += 0.1f){
+  for(double z = -0.6; z < -0.21; z += 0.1){
+    for(double y = -0.6; y < -0.21; y += 0.1){
+      for(double x = -0.6; x < -0.21; x += 0.1){
         query = point3d(x, y, z);
         result = tree.search(query);
         print_query_info(query, result);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     }
   }
   
-  query = point3d(-0.5f, -0.4f, -0.4f);
+  query = point3d(-0.5, -0.4, -0.4);
   result = tree.search(query);
 	
   vector<point3d> normals;

@@ -133,11 +133,11 @@ int main(int argc, char **argv)
       } else if (strcmp(argv[i], "--offset") == 0 && i < argc - 4) {
         OCTOMAP_WARNING_STR(argv[i] << " not yet implemented!\n");
         i++;
-        offset(0) = (float) atof(argv[i]);
+        offset(0) = (double) atof(argv[i]);
         i++;
-        offset(1) = (float) atof(argv[i]);
+        offset(1) = (double) atof(argv[i]);
         i++;
-        offset(2) = (float) atof(argv[i]);
+        offset(2) = (double) atof(argv[i]);
 
         //applyOffset = true;
 

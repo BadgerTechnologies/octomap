@@ -7,14 +7,14 @@ using namespace octomap;
 using namespace octomath;
 
 int main(int argc, char** argv) {
-    float res = 0.01f;
+    double res = 0.01;
     OcTree tree(res);
     
     EXPECT_EQ(tree.size(), 0);
     tree.prune();
     EXPECT_EQ(tree.size(), 0);
 
-    point3d singlePt(-0.05f, -0.02f, 1.0f);
+    point3d singlePt(-0.0505, -0.02, 1.0);
     OcTreeKey singleKey;
     tree.coordToKeyChecked(singlePt, singleKey);
     OcTreeNode* singleNode = tree.updateNode(singleKey, true);
@@ -129,9 +129,9 @@ int main(int argc, char** argv) {
     //tree.write("pruning_test_out1.ot");
 
     // now test larger volume pruning:
-    for (float x=0.005f; x <= 0.32f; x+=res){
-      for (float y=0.005f; y <= 0.32f; y+=res){
-        for (float z=0.005f; z <= 0.32f; z+=res){
+    for (double x=0.005; x <= 0.32; x+=res){
+      for (double y=0.005; y <= 0.32; y+=res){
+        for (double z=0.005; z <= 0.32; z+=res){
           OcTreeNode* node = tree.updateNode(point3d(x,y,z), true);
           EXPECT_TRUE(node);
           EXPECT_TRUE(tree.isNodeOccupied(node));
@@ -150,9 +150,9 @@ int main(int argc, char** argv) {
     tree.prune();
     EXPECT_EQ(2 * tree.getTreeDepth() - 5, tree.size());
     // test expansion:
-    for (float x=0.005f; x <= 0.32f; x+=res){
-      for (float y=0.005f; y <= 0.32f; y+=res){
-        for (float z=0.005f; z <= 0.32f; z+=res){
+    for (double x=0.005; x <= 0.32; x+=res){
+      for (double y=0.005; y <= 0.32; y+=res){
+        for (double z=0.005; z <= 0.32; z+=res){
           OcTreeNode* node = tree.search(point3d(x,y,z));
           EXPECT_TRUE(node);
           EXPECT_TRUE(tree.isNodeOccupied(node));
@@ -160,13 +160,13 @@ int main(int argc, char** argv) {
       }
     }
 
-    tree.coordToKeyChecked(point3d(0.1f, 0.1f, 0.1f), singleKey);
+    tree.coordToKeyChecked(point3d(0.1, 0.1, 0.1), singleKey);
 
     EXPECT_TRUE(tree.updateNode(singleKey, true));
 
-    for (float x=0.005f; x <= 0.32f; x+=res){
-      for (float y=0.005f; y <= 0.32f; y+=res){
-        for (float z=0.005f; z <= 0.32f; z+=res){
+    for (double x=0.005; x <= 0.32; x+=res){
+      for (double y=0.005; y <= 0.32; y+=res){
+        for (double z=0.005; z <= 0.32; z+=res){
           OcTreeNode* node = tree.search(point3d(x,y,z));
           EXPECT_TRUE(node);
           EXPECT_TRUE(tree.isNodeOccupied(node));
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
       EXPECT_EQ(initialSize, tree.calcNumNodes());
       EXPECT_EQ(initialSize, 35 + 2 * tree.getTreeDepth());
             
-      point3d newCoord(-2.0, -2.0, -2.0);
+      point3d newCoord(-2.001, -2.001, -2.001);
       OcTreeNode* newNode = tree.updateNode(newCoord, true);
       EXPECT_TRUE(newNode != NULL);
       
@@ -202,6 +202,7 @@ int main(int argc, char** argv) {
         EXPECT_FALSE(tree.nodeChildExists(parentNode, i));
       }
       EXPECT_TRUE(tree.nodeChildExists(parentNode, 7));
+      EXPECT_TRUE(newNode == tree.getNodeChild(parentNode, 7));
       
       // create another new node manually:
       OcTreeNode* newNodeCreated = tree.createNodeChild(parentNode, 0);

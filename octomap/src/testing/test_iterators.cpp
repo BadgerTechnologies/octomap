@@ -19,7 +19,7 @@ void printUsage(char* self){
 }
 
 void computeChildCenter (const unsigned int& pos,
-    const float& center_offset,
+    const double& center_offset,
     const point3d& parent_center,
     point3d& child_center) {
   // x-axis
@@ -44,7 +44,7 @@ void getLeafNodesRecurs(std::list<OcTreeVolume>& voxels,
   if ((depth <= max_depth) && (node != NULL) ) {
     if (tree->nodeHasChildren(node) && (depth != max_depth)) {
 
-      float center_offset = float(tree_center(0) / pow( 2., (double) depth+1));
+      double center_offset = tree_center(0) / pow( 2., (double) depth+1);
       point3d search_center;
 
       for (unsigned int i=0; i<8; i++) {
@@ -82,7 +82,7 @@ void getVoxelsRecurs(std::list<OcTreeVolume>& voxels,
 
       for (unsigned int i = 0; i < 8; i++) {
         if (tree->nodeChildExists(node, i)) {
-          computeChildCenter(i, (float) center_offset, parent_center, search_center);
+          computeChildCenter(i, center_offset, parent_center, search_center);
           getVoxelsRecurs(voxels, max_depth, tree->getNodeChild(node, i), depth + 1, search_center, tree_center, tree);
 
         }
@@ -129,10 +129,10 @@ void boundingBoxTest(OcTree* tree){
   OcTreeKey bbxMinKey, bbxMaxKey;
   double temp_x,temp_y,temp_z;
   tree->getMetricMin(temp_x,temp_y,temp_z);
-  octomap::point3d bbxMin = octomap::point3d(float(temp_x), float(temp_y), float(temp_z));
+  octomap::point3d bbxMin = octomap::point3d(temp_x, temp_y, temp_z);
 
   tree->getMetricMax(temp_x,temp_y,temp_z);
-  octomap::point3d bbxMax = octomap::point3d(float(temp_x), float(temp_y), float(temp_z));
+  octomap::point3d bbxMax = octomap::point3d(temp_x, temp_y, temp_z);
 
   EXPECT_TRUE(tree->coordToKeyChecked(bbxMin, bbxMinKey));
   EXPECT_TRUE(tree->coordToKeyChecked(bbxMax, bbxMaxKey));
@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
   point3d tree_center;
   key_type center_key = tree->coordToKey(0.0);
   tree_center(0) = tree_center(1) = tree_center(2)
-              = (float) (((double) center_key) * tree->getResolution());
+              = (((double) center_key) * tree->getResolution());
 
   gettimeofday(&start, NULL);  // start timer
   getLeafNodesRecurs(list_depr,maxDepth,tree->getRoot(), 0, tree_center, tree_center, tree, true);
