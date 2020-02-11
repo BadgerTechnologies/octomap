@@ -82,21 +82,23 @@ namespace octomap {
     }
     
     OcTreeKey(const OcTreeKey& other){
-      k[0] = other.k[0]; 
-      k[1] = other.k[1]; 
-      k[2] = other.k[2];
+      for (unsigned int i=0; i<4; ++i) {
+        k[i] = other.k[i];
+      }
     }
     
     bool operator== (const OcTreeKey &other) const { 
-      return ((k[0] == other[0]) && (k[1] == other[1]) && (k[2] == other[2]));
+      return ((k[0] == other.k[0]) && (k[1] == other.k[1]) && (k[2] == other.k[2]));
     }
     
     bool operator!= (const OcTreeKey& other) const {
-      return( (k[0] != other[0]) || (k[1] != other[1]) || (k[2] != other[2]) );
+      return( (k[0] != other.k[0]) || (k[1] != other.k[1]) || (k[2] != other.k[2]));
     }
     
     OcTreeKey& operator=(const OcTreeKey& other){
-      k[0] = other.k[0]; k[1] = other.k[1]; k[2] = other.k[2];
+      for (unsigned int i=0; i<4; ++i) {
+        k[i] = other.k[i];
+      }
       return *this;
     }
     
@@ -108,7 +110,7 @@ namespace octomap {
       return k[i];
     }
 
-    key_type k[3];
+    alignas(16) key_type k[4];
 
     /// Provides a hash function on Keys
     struct KeyHash{
@@ -211,30 +213,21 @@ namespace octomap {
    */
   inline void computeChildKey (unsigned int pos, key_type center_offset_key,
                                           const OcTreeKey& parent_key, OcTreeKey& child_key) {
+    const key_type offset_keys[2] = {0 - center_offset_key - (center_offset_key ? 0 : 1), center_offset_key};
     // x-axis
-    if (pos & 1) child_key[0] = parent_key[0] + center_offset_key;
-    else         child_key[0] = parent_key[0] - center_offset_key - (center_offset_key ? 0 : 1);
+    child_key[0] = parent_key[0] + offset_keys[(pos & 1) != 0];
     // y-axis
-    if (pos & 2) child_key[1] = parent_key[1] + center_offset_key;
-    else         child_key[1] = parent_key[1] - center_offset_key - (center_offset_key ? 0 : 1);
+    child_key[1] = parent_key[1] + offset_keys[(pos & 2) != 0];
     // z-axis
-    if (pos & 4) child_key[2] = parent_key[2] + center_offset_key;
-    else         child_key[2] = parent_key[2] - center_offset_key - (center_offset_key ? 0 : 1);
+    child_key[2] = parent_key[2] + offset_keys[(pos & 4) != 0];
   }
   
   /// generate child index (between 0 and 7) from key at given tree depth
   inline uint8_t computeChildIdx(const OcTreeKey& key, int depth){
-    uint8_t pos = 0;
-    if (key.k[0] & (1 << depth)) 
-      pos += 1;
-    
-    if (key.k[1] & (1 << depth)) 
-      pos += 2;
-    
-    if (key.k[2] & (1 << depth)) 
-      pos += 4;
-    
-    return pos;
+    const key_type bit = (1 << depth);
+    return ((key.k[0] & bit) != 0)
+         | (((key.k[1] & bit) != 0)<<1)
+         | (((key.k[2] & bit) != 0)<<2);
   }
 
   /**
@@ -251,11 +244,11 @@ namespace octomap {
       // avoid undefined behavior with the bit shift below
       return OcTreeKey(0,0,0);
     else {
-      key_type mask = std::numeric_limits<key_type>::max() << level;
-      OcTreeKey result = key;
-      result[0] &= mask;
-      result[1] &= mask;
-      result[2] &= mask;
+      const key_type mask = std::numeric_limits<key_type>::max() << level;
+      OcTreeKey result;
+      result[0] = key[0] & mask;
+      result[1] = key[1] & mask;
+      result[2] = key[2] & mask;
       return result;
     }
   }
