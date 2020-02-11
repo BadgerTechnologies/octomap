@@ -66,7 +66,7 @@ namespace octomath {
      * its x, y, z-values and a rotation represented by its
      * Tait-Bryan angles roll, pitch, and yaw
      */
-    Pose6D(float x, float y, float z, double roll, double pitch, double yaw);
+    Pose6D(double x, double y, double z, double roll, double pitch, double yaw);
 
     Pose6D(const Pose6D& other);
     Pose6D& operator= (const Pose6D& other);
@@ -99,12 +99,12 @@ namespace octomath {
     const Quaternion& rot() const { return rotation; }
 
 
-    inline float& x() { return translation(0); }
-    inline float& y() { return translation(1); }
-    inline float& z() { return translation(2); }
-    inline const float& x() const { return translation(0); }
-    inline const float& y() const { return translation(1); }
-    inline const float& z() const { return translation(2); }
+    inline double& x() { return translation(0); }
+    inline double& y() { return translation(1); }
+    inline double& z() { return translation(2); }
+    inline const double& x() const { return translation(0); }
+    inline const double& y() const { return translation(1); }
+    inline const double& z() const { return translation(2); }
 
     inline double roll()  const {return (rotation.toEuler())(0); }
     inline double pitch() const {return (rotation.toEuler())(1); }

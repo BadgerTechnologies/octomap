@@ -54,7 +54,7 @@ namespace octomap {
     MAPNODE* queryNode(const point3d& p);
 
     bool isOccupied(const point3d& p) const;
-    bool isOccupied(float x, float y, float z) const;
+    bool isOccupied(double x, double y, double z) const;
 
     double getOccupancy(const point3d& p);
 

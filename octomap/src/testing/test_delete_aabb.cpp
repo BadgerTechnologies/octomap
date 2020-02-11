@@ -10,7 +10,7 @@ using namespace octomath;
 
 int main(int /*argc*/, char** /*argv*/) {
 
-  float res = 0.01f;
+  double res = 0.01;
   OcTree tree(res);
   OcTree deleted_tree(res);
   OcTree deleted_tree2(res);

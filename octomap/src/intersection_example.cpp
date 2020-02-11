@@ -48,9 +48,9 @@ int main(int /*argc*/, char** /*argv*/) {
 
   // insert some measurements of free cells
 
-  for (float x = -2; x <= 0; x += 0.02f) {
-    for (float y = -2; y <= 0; y += 0.02f) {
-      for (float z = -2; z <= 0; z += 0.02f) {
+  for (double x = -2; x <= 0; x += 0.02) {
+    for (double y = -2; y <= 0; y += 0.02) {
+      for (double z = -2; z <= 0; z += 0.02) {
         point3d endpoint(x, y, z);
         tree.updateNode(endpoint, false); // integrate 'free' measurement
       }
@@ -58,9 +58,9 @@ int main(int /*argc*/, char** /*argv*/) {
   }
 
   // insert some measurements of occupied cells (twice as much)
-  for (float x = -1; x <= 0; x += 0.01f) {
-    for (float y = -1; y <= 0; y += 0.01f) {
-      for (float z = -1; z <= 0; z += 0.01f) {
+  for (double x = -1; x <= 0; x += 0.01) {
+    for (double y = -1; y <= 0; y += 0.01) {
+      for (double z = -1; z <= 0; z += 0.01) {
         point3d endpoint(x, y, z);
         tree.updateNode(endpoint, true); // integrate 'occupied' measurement
       }
@@ -72,7 +72,7 @@ int main(int /*argc*/, char** /*argv*/) {
   point3d ray_end;
 
   
-  for(float z = 0; z <= 0.25; z += 0.125){
+  for(double z = 0; z <= 0.25; z += 0.125){
     direction = point3d(1, 1, z);
     cout << endl;
     cout << "casting ray from " << origin  << " in the " << direction << " direction"<< endl;

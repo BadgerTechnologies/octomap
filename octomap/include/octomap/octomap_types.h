@@ -45,9 +45,9 @@
 
 namespace octomap {
 
-  ///Use Vector3 (float precision) as a point3d in octomap
+  ///Use Vector3 (double precision) as a point3d in octomap
   typedef octomath::Vector3               point3d;
-  /// Use our Pose6D (float precision) as pose6d in octomap
+  /// Use our Pose6D (double precision) as pose6d in octomap
   typedef octomath::Pose6D                pose6d;
 
   typedef std::vector<octomath::Vector3>  point3d_collection;

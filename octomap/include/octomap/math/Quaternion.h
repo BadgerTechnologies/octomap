@@ -76,7 +76,7 @@ namespace octomath {
      * Constructs a Quaternion from four single
      * values
      */
-    Quaternion(float u, float x, float y, float z);
+    Quaternion(double u, double x, double y, double z);
 
     /*!
      * \brief Constructor
@@ -113,15 +113,15 @@ namespace octomath {
     void toRotMatrix(std::vector <double>& rot_matrix_3_3) const;
 
 
-    inline const float& operator() (unsigned int i) const { return data[i]; }
-    inline float& operator() (unsigned int i) { return data[i]; }
+    inline const double& operator() (unsigned int i) const { return data[i]; }
+    inline double& operator() (unsigned int i) { return data[i]; }
 
-    float norm () const;
+    double norm () const;
     Quaternion  normalized () const;
     Quaternion& normalize ();
 
 
-    void operator/= (float x);
+    void operator/= (double x);
     Quaternion& operator= (const Quaternion& other);
     bool operator== (const Quaternion& other) const;
 
@@ -175,15 +175,15 @@ namespace octomath {
      */
     Vector3 rotate(const Vector3 &v) const;
 
-    inline float& u() { return data[0]; }
-    inline float& x() { return data[1]; }
-    inline float& y() { return data[2]; }
-    inline float& z() { return data[3]; }
+    inline double& u() { return data[0]; }
+    inline double& x() { return data[1]; }
+    inline double& y() { return data[2]; }
+    inline double& z() { return data[3]; }
 
-    inline const float& u() const { return data[0]; }
-    inline const float& x() const { return data[1]; }
-    inline const float& y() const { return data[2]; }
-    inline const float& z() const { return data[3]; }
+    inline const double& u() const { return data[0]; }
+    inline const double& x() const { return data[1]; }
+    inline const double& y() const { return data[2]; }
+    inline const double& z() const { return data[3]; }
 
     std::istream& read(std::istream &s);
     std::ostream& write(std::ostream &s) const;
@@ -191,7 +191,7 @@ namespace octomath {
     std::ostream& writeBinary(std::ostream &s) const;
 
   protected:
-    float data[4];
+    double data[4];
 
   };
 

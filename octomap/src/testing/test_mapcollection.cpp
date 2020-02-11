@@ -8,7 +8,7 @@ using namespace std;
 using namespace octomap;
 using namespace octomath;
 
-OcTree* generateSphereTree(point3d origin, float radius){
+OcTree* generateSphereTree(point3d origin, double radius){
 	OcTree* tree = new OcTree(0.05);
 
 	point3d point_on_surface = origin;
@@ -29,11 +29,11 @@ int main(int /*argc*/, char** argv) {
 
   // //Generate a MapCollection
   // MapCollection<MapNode<OcTree> > coll;
-  // OcTree* tree1 = generateSphereTree(point3d(0.01f,0.01f,0.01f), 2.0f);
+  // OcTree* tree1 = generateSphereTree(point3d(0.01,0.01,0.01), 2.0);
   // MapNode<OcTree>* mn1 = new MapNode<OcTree>(tree1, pose6d(0.0,0.0,0.0,0.0,0.0,0.0));
   // mn1->setId("nodeone");
   // coll.addNode(mn1);
-  // OcTree* tree2 = generateSphereTree(point3d(0.01f,0.01f,0.01f), 3.5f);
+  // OcTree* tree2 = generateSphereTree(point3d(0.01,0.01,0.01), 3.5);
   // MapNode<OcTree>* mn2 = new MapNode<OcTree>(tree2, pose6d(3.0,7.0,10.0,0.0,0.0,0.0));
   // mn2->setId("nodetwo");
   // coll.addNode(mn2);
@@ -69,7 +69,7 @@ int main(int /*argc*/, char** argv) {
   query.push_back(point3d(0,0,0));
   query.push_back(point3d(2,0,0));
   query.push_back(point3d(2,0,2));
-  query.push_back(point3d(1.99f,0.0f,0.0f));
+  query.push_back(point3d(1.99,0.0,0.0));
   query.push_back(point3d(0,0,3));
   query.push_back(point3d(3,7,13.5));
   query.push_back(point3d(0,-1,-1));

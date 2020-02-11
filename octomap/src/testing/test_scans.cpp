@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 
   //##############################################################     
 
-  point3d point_on_surface (4.01f, 0.01f, 0.01f);
+  point3d point_on_surface (4.01, 0.01, 0.01);
 
 
   Pointcloud* cloud = new Pointcloud();

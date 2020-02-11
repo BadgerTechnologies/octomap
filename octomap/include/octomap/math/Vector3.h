@@ -72,7 +72,7 @@ namespace octomath {
      * Constructs a three-dimensional vector from
      * three single values x, y, z or roll, pitch, yaw
      */
-    Vector3 (float x, float y, float z) {
+    Vector3 (double x, double y, double z) {
       data[0] = x;
       data[1] = y;
       data[2] = z;
@@ -119,71 +119,71 @@ namespace octomath {
       return x()*other.x() + y()*other.y() + z()*other.z();
     }
 
-    inline const float& operator() (unsigned int i) const
+    inline const double& operator() (unsigned int i) const
     {
       return data[i];
     }
-    inline float& operator() (unsigned int i)
+    inline double& operator() (unsigned int i)
     {
       return data[i];
     }
 
-    inline float& x() 
+    inline double& x() 
     {
       return operator()(0);
     }
 
-    inline float& y() 
+    inline double& y() 
     {
       return operator()(1);
     }
 
-    inline float& z() 
+    inline double& z() 
     {
       return operator()(2);
     }
 
-    inline const float& x() const 
+    inline const double& x() const 
     {
       return operator()(0);
     }
 
-    inline const float& y() const 
+    inline const double& y() const 
     {
       return operator()(1);
     }
 
-    inline const float& z() const 
+    inline const double& z() const 
     {
       return operator()(2);
     }
 
-    inline float& roll() 
+    inline double& roll() 
     {
       return operator()(0);
     }
 
-    inline float& pitch() 
+    inline double& pitch() 
     {
       return operator()(1);
     }
 
-    inline float& yaw() 
+    inline double& yaw() 
     {
       return operator()(2);
     }
 
-    inline const float& roll() const 
+    inline const double& roll() const 
     {
       return operator()(0);
     }
 
-    inline const float& pitch() const 
+    inline const double& pitch() const 
     {
       return operator()(1);
     }
 
-    inline const float& yaw() const 
+    inline const double& yaw() const 
     {
       return operator()(2);
     }
@@ -206,7 +206,7 @@ namespace octomath {
       return result;
     }
 
-    inline Vector3 operator*  (float x) const {
+    inline Vector3 operator*  (double x) const {
       Vector3 result(*this);
       result(0) *= x;
       result(1) *= x;
@@ -236,13 +236,13 @@ namespace octomath {
       data[2] -= other(2);      
     }
 
-    inline void operator/= (float x) {
+    inline void operator/= (double x) {
       data[0] /= x;
       data[1] /= x;
       data[2] /= x;      
     }
 
-    inline void operator*= (float x) {    
+    inline void operator*= (double x) {    
       data[0] *= x;
       data[1] *= x;
       data[2] *= x;      
@@ -281,7 +281,7 @@ namespace octomath {
     inline Vector3& normalize () {
       double len = norm();
       if (len > 0)
-        *this /= (float) len;
+        *this /= (double) len;
       return *this;
     }
 
@@ -323,7 +323,7 @@ namespace octomath {
 
 
   protected:
-    float data[3];
+    double data[3];
 
   };
 

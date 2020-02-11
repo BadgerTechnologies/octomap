@@ -65,8 +65,8 @@ int main(int argc, char **argv)
     int version;               // binvox file format version (should be 1)
     size_t depth, height, width;  // dimensions of the voxel grid
     size_t size;                  // number of grid cells (height * width * depth)
-    float tx, ty, tz;          // Translation
-    float scale;               // Scaling factor
+    double tx, ty, tz;          // Translation
+    double scale;               // Scaling factor
     bool mark_free = false;    // Mark free cells (false = cells remain "unknown")
     bool rotate = false;       // Fix orientation of webots-exported files
     bool show_help = false;
@@ -139,11 +139,11 @@ int main(int argc, char **argv)
           continue;
         } else if (strcmp(argv[i], "--offset") == 0 && i < argc - 4) {
         	i++;
-        	offset(0) = (float) atof(argv[i]);
+        	offset(0) = (double) atof(argv[i]);
         	i++;
-        	offset(1) = (float) atof(argv[i]);
+        	offset(1) = (double) atof(argv[i]);
         	i++;
-        	offset(2) = (float) atof(argv[i]);
+        	offset(2) = (double) atof(argv[i]);
 
         	applyOffset = true;
 
@@ -257,9 +257,9 @@ int main(int argc, char **argv)
                     size_t x = j / (width * height);
 
                     // voxel coordinates --> world coordinates
-                    point3d endpoint((float) ((double) x*res + tx + 0.000001),
-                                     (float) ((double) y*res + ty + 0.000001),
-                                     (float) ((double) z*res + tz + 0.000001));
+                    point3d endpoint(((double) x*res + tx + 0.000001),
+                                     ((double) y*res + ty + 0.000001),
+                                     ((double) z*res + tz + 0.000001));
 
                     if(rotate) {
                       endpoint.rotate_IP(M_PI_2, 0.0, 0.0);
