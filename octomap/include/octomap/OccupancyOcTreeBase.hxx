@@ -209,7 +209,7 @@ namespace octomap {
           }
         } else { // user set a maxrange and length is above
           point3d direction = (p - origin).normalized ();
-          point3d new_end = origin + direction * (float) maxrange;
+          point3d new_end = origin + direction * maxrange;
           if (this->computeRayKeys(origin, new_end, *keyray)){
 #ifdef _OPENMP
             #pragma omp critical (free_insert)
@@ -1167,12 +1167,12 @@ namespace octomap {
     octomap::point3d normalZ(0, 0, 1);
 
     // One point on each plane, let them be the center for simplicity
-    octomap::point3d pointXNeg(center(0) - float(this->resolution / 2.0), center(1), center(2));
-    octomap::point3d pointXPos(center(0) + float(this->resolution / 2.0), center(1), center(2));
-    octomap::point3d pointYNeg(center(0), center(1) - float(this->resolution / 2.0), center(2));
-    octomap::point3d pointYPos(center(0), center(1) + float(this->resolution / 2.0), center(2));
-    octomap::point3d pointZNeg(center(0), center(1), center(2) - float(this->resolution / 2.0));
-    octomap::point3d pointZPos(center(0), center(1), center(2) + float(this->resolution / 2.0));
+    octomap::point3d pointXNeg(center(0) - double(this->resolution / 2.0), center(1), center(2));
+    octomap::point3d pointXPos(center(0) + double(this->resolution / 2.0), center(1), center(2));
+    octomap::point3d pointYNeg(center(0), center(1) - double(this->resolution / 2.0), center(2));
+    octomap::point3d pointYPos(center(0), center(1) + double(this->resolution / 2.0), center(2));
+    octomap::point3d pointZNeg(center(0), center(1), center(2) - double(this->resolution / 2.0));
+    octomap::point3d pointZPos(center(0), center(1), center(2) + double(this->resolution / 2.0));
 
     double lineDotNormal = 0.0;
     double d = 0.0;
@@ -1186,7 +1186,7 @@ namespace octomap {
     // if yes keep only the closest (smallest distance to sensor origin).
     if((lineDotNormal = normalX.dot(direction)) != 0.0){   // Ensure lineDotNormal is non-zero (assign and test)
       d = (pointXNeg - origin).dot(normalX) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(1) < (pointYNeg(1) - 1e-6) || intersect(1) > (pointYPos(1) + 1e-6) ||
          intersect(2) < (pointZNeg(2) - 1e-6) || intersect(2) > (pointZPos(2) + 1e-6))){
         outD = std::min(outD, d);
@@ -1194,7 +1194,7 @@ namespace octomap {
       }
 
       d = (pointXPos - origin).dot(normalX) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(1) < (pointYNeg(1) - 1e-6) || intersect(1) > (pointYPos(1) + 1e-6) ||
          intersect(2) < (pointZNeg(2) - 1e-6) || intersect(2) > (pointZPos(2) + 1e-6))){
         outD = std::min(outD, d);
@@ -1204,7 +1204,7 @@ namespace octomap {
 
     if((lineDotNormal = normalY.dot(direction)) != 0.0){   // Ensure lineDotNormal is non-zero (assign and test)
       d = (pointYNeg - origin).dot(normalY) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(0) < (pointXNeg(0) - 1e-6) || intersect(0) > (pointXPos(0) + 1e-6) ||
          intersect(2) < (pointZNeg(2) - 1e-6) || intersect(2) > (pointZPos(2) + 1e-6))){
         outD = std::min(outD, d);
@@ -1212,7 +1212,7 @@ namespace octomap {
       }
 
       d = (pointYPos - origin).dot(normalY) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(0) < (pointXNeg(0) - 1e-6) || intersect(0) > (pointXPos(0) + 1e-6) ||
          intersect(2) < (pointZNeg(2) - 1e-6) || intersect(2) > (pointZPos(2) + 1e-6))){
         outD = std::min(outD, d);
@@ -1222,7 +1222,7 @@ namespace octomap {
 
     if((lineDotNormal = normalZ.dot(direction)) != 0.0){   // Ensure lineDotNormal is non-zero (assign and test)
       d = (pointZNeg - origin).dot(normalZ) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(0) < (pointXNeg(0) - 1e-6) || intersect(0) > (pointXPos(0) + 1e-6) ||
          intersect(1) < (pointYNeg(1) - 1e-6) || intersect(1) > (pointYPos(1) + 1e-6))){
         outD = std::min(outD, d);
@@ -1230,7 +1230,7 @@ namespace octomap {
       }
 
       d = (pointZPos - origin).dot(normalZ) / lineDotNormal;
-      intersect = direction * float(d) + origin;
+      intersect = direction * double(d) + origin;
       if(!(intersect(0) < (pointXNeg(0) - 1e-6) || intersect(0) > (pointXPos(0) + 1e-6) ||
          intersect(1) < (pointYNeg(1) - 1e-6) || intersect(1) > (pointYPos(1) + 1e-6))){
         outD = std::min(outD, d);
@@ -1241,7 +1241,7 @@ namespace octomap {
     // Substract (add) a fraction to ensure no ambiguity on the starting voxel
     // Don't start on a boundary.
     if(found)
-      intersection = direction * float(outD + delta) + origin;
+      intersection = direction * double(outD + delta) + origin;
 
     return found;
   }
@@ -1268,7 +1268,7 @@ namespace octomap {
     if ((maxrange > 0) && ((end - origin).norm () > maxrange))
       {
         point3d direction = (end - origin).normalized ();
-        point3d new_end = origin + direction * (float) maxrange;
+        point3d new_end = origin + direction * maxrange;
         return integrateMissOnRay(origin, new_end,lazy_eval);
       }
     // insert complete ray

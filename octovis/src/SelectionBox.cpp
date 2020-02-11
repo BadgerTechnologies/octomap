@@ -83,7 +83,7 @@ void SelectionBox::draw(bool withNames){
       qglviewer::Vec f = frame(i)->position();
 
       unsigned oi = i+3;
-      float corr = m_arrowLength/2.0;
+      double corr = m_arrowLength/2.0;
       if (i >= 3){
         oi = i-3;
         corr *= -1;
@@ -143,7 +143,7 @@ void SelectionBox::draw(bool withNames){
 
   for (unsigned i = 0; i < m_frames.size(); ++i){
     qglviewer::Vec pt = m_minPt;
-    float corr = m_arrowLength/2;
+    double corr = m_arrowLength/2;
     if (i/3 == 1){
       pt = m_maxPt;
       corr *= -1;
@@ -171,11 +171,11 @@ void SelectionBox::draw(bool withNames){
     if (withNames)
       glPushName(i);
 
-    float length = m_arrowLength;
+    double length = m_arrowLength;
     if (frame(i)->grabsMouse())
       length *= 2;
 
-    const float radius = length/20;
+    const double radius = length/20;
 
     float color[4];
     if (i%3 == 0){ // x
@@ -214,13 +214,13 @@ void SelectionBox::draw(bool withNames){
 
 }
 
-void SelectionBox::getBBXMin(float& x, float& y, float& z) const {
+void SelectionBox::getBBXMin(double& x, double& y, double& z) const {
   x = m_minPt.x;
   y = m_minPt.y;
   z = m_minPt.z;
 }
 
-void SelectionBox::getBBXMax(float& x, float& y, float& z) const {
+void SelectionBox::getBBXMax(double& x, double& y, double& z) const {
   x = m_maxPt.x;
   y = m_maxPt.y;
   z = m_maxPt.z;
@@ -239,9 +239,9 @@ int SelectionBox::getGrabbedFrame() const {
 }
 
 
-void SelectionBox::drawAxis(float length) const
+void SelectionBox::drawAxis(double length) const
 {
-  const float radius = length/20;
+  const double radius = length/20;
 
   GLboolean lighting, colorMaterial;
   glGetBooleanv(GL_LIGHTING, &lighting);

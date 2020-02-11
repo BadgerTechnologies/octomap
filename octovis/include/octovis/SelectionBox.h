@@ -36,12 +36,12 @@ namespace octomap {
     void draw(bool withNames = false);
     const qglviewer::ManipulatedFrame* frame (unsigned short i) const { return m_frames.at(i); }
     qglviewer::ManipulatedFrame* frame (unsigned short i) { return m_frames.at(i); }
-    void getBBXMin(float& x, float& y, float& z) const;
-    void getBBXMax(float& x, float& y, float& z) const;
+    void getBBXMin(double& x, double& y, double& z) const;
+    void getBBXMax(double& x, double& y, double& z) const;
     int getGrabbedFrame() const;
 
   protected:
-    void drawAxis(float length = 0.2f) const;
+    void drawAxis(double length = 0.2) const;
 
     bool m_visible;
     std::vector<qglviewer::ManipulatedFrame*> m_frames;

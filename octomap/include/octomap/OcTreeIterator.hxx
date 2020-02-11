@@ -339,12 +339,6 @@
       * Constructor of the iterator. The bounding box corners min and max are
       * converted into an OcTreeKey first.
       *
-      * @note Due to rounding and discretization
-      * effects, nodes may be traversed that have float coordinates appearing
-      * outside of the (float) bounding box. However, the node's complete volume
-      * will include the bounding box coordinate. For a more exact control, use
-      * the constructor with OcTreeKeys instead.
-      *
       * @param tree OcTreeBaseImpl on which the iterator is used on
       * @param min Minimum point3d of the axis-aligned boundingbox
       * @param max Maximum point3d of the axis-aligned boundingbox

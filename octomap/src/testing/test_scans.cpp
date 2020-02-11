@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 
   //##############################################################     
 
-  point3d point_on_surface (4.01f, 0.01f, 0.01f);
+  point3d point_on_surface (4.01, 0.01, 0.01);
 
 
   Pointcloud* cloud = new Pointcloud();
@@ -57,7 +57,9 @@ int main(int argc, char** argv) {
     EXPECT_EQ(scanNode->scan->size(), refScanNode->scan->size());
 
     for (size_t i = 0; i < scanNode->scan->size(); ++i){
-      EXPECT_EQ((*scanNode->scan)[i], (*refScanNode->scan)[i]);
+      EXPECT_FLOAT_EQ((*scanNode->scan)[i].x(), (*refScanNode->scan)[i].x());
+      EXPECT_FLOAT_EQ((*scanNode->scan)[i].y(), (*refScanNode->scan)[i].y());
+      EXPECT_FLOAT_EQ((*scanNode->scan)[i].z(), (*refScanNode->scan)[i].z());
     }  
     
   }
