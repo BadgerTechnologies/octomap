@@ -426,6 +426,7 @@ namespace octomap {
 
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::allocNodeChildren(NODE* node){
+    assert(node->children == NULL);
     node->children = static_cast<AbstractOcTreeNode**>(children_pool.malloc());
     for (unsigned int i=0; i<8; i++) {
       node->children[i] = NULL;
