@@ -429,16 +429,17 @@
 
         typename iterator_base::StackElement s;
         s.depth = top.depth +1;
-        key_type center_offset_key = computeCenterOffsetKey(top.depth, this->tree->tree_max_val);
+        key_type center_offset_key_down = computeCenterOffsetKey(top.depth, this->tree->tree_max_val);
+        key_type center_offset_key_up = computeCenterOffsetKey(top.depth, this->tree->tree_max_val-1);
         // push on stack in reverse order
         for (int i=7; i>=0; --i) {
           if (this->tree->nodeChildExists(top.node, i)) {
-            computeChildKey(i, center_offset_key, top.key, s.key);
+            computeChildKey(i, center_offset_key_down, top.key, s.key);
 
             // overlap of query bbx and child bbx?
-            if ((minKey[0] <= (s.key[0] + center_offset_key)) && (maxKey[0] >= (s.key[0] - center_offset_key))
-                && (minKey[1] <= (s.key[1] + center_offset_key)) && (maxKey[1] >= (s.key[1] - center_offset_key))
-                && (minKey[2] <= (s.key[2] + center_offset_key)) && (maxKey[2] >= (s.key[2] - center_offset_key)))
+            if ((minKey[0] <= (s.key[0] + center_offset_key_up)) && (maxKey[0] >= (s.key[0] - center_offset_key_down))
+                && (minKey[1] <= (s.key[1] + center_offset_key_up)) && (maxKey[1] >= (s.key[1] - center_offset_key_down))
+                && (minKey[2] <= (s.key[2] + center_offset_key_up)) && (maxKey[2] >= (s.key[2] - center_offset_key_down)))
             {
               s.node = this->tree->getNodeChild(top.node, i);
               this->stack.push(s);
