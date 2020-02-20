@@ -425,6 +425,17 @@ int main(int argc, char** argv) {
     std::cout << it.getDepth() << " " << " "<<it.getCoordinate()<< std::endl;
   }
 
+  simpleTree.updateNode(point3d(-.5, -.4, -.3), 3.0f);
+  simpleTree.updateNode(point3d(.5, -.4, -.3), 3.0f);
+  simpleTree.updateNode(point3d(-.5, -.4, .3), 3.0f);
+  simpleTree.updateNode(point3d(-.5, .4, -.3), 3.0f);
+  simpleTree.updateNode(point3d(.5, .4, -.3), 3.0f);
+  simpleTree.updateNode(point3d(.5, -.4, .3), 3.0f);
+  simpleTree.updateNode(point3d(-.5, -.4, .3), 3.0f);
+  simpleTree.updateNode(point3d(.5, .4, .3), 3.0f);
+  boundingBoxTest(&simpleTree);
+  simpleTree.setTreeDepth(15);
+  boundingBoxTest(&simpleTree);
 
   std::cout << "Tests successful\n";
 
