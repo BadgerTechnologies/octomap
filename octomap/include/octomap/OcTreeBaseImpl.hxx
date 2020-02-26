@@ -45,8 +45,10 @@ namespace octomap {
 
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(double in_resolution) :
-    I(), root(NULL), tree_depth(KEY_BIT_WIDTH), tree_max_val(KEY_CENTER),
-    resolution(in_resolution), tree_size(0),
+    I(),
+    OcTreeSpace(in_resolution),
+    root(NULL),
+    tree_size(0),
     // Start the pools off a bit larger than the default of 32 to keep from
     // allocating the intial smaller regions.
     node_pool(sizeof(NODE), 128),
@@ -60,8 +62,10 @@ namespace octomap {
 
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(double in_resolution, unsigned int in_tree_depth, unsigned int in_tree_max_val) :
-    I(), root(NULL), tree_depth(in_tree_depth), tree_max_val(in_tree_max_val),
-    resolution(in_resolution), tree_size(0),
+    I(),
+    OcTreeSpace(in_resolution, in_tree_depth),
+    root(NULL),
+    tree_size(0),
     // Start the pools off a bit larger than the default of 32 to keep from
     // allocating the intial smaller regions.
     node_pool(sizeof(NODE), 128),
@@ -81,8 +85,9 @@ namespace octomap {
 
   template <class NODE,class I>
   OcTreeBaseImpl<NODE,I>::OcTreeBaseImpl(const OcTreeBaseImpl<NODE,I>& rhs) :
-    root(NULL), tree_depth(rhs.tree_depth), tree_max_val(rhs.tree_max_val),
-    resolution(rhs.resolution), tree_size(rhs.tree_size),
+    OcTreeSpace(rhs),
+    root(NULL),
+    tree_size(rhs.tree_size),
     // Start the pools off big enough to hold the tree being copied.
     node_pool(sizeof(NODE), std::max<size_t>(rhs.tree_size, 128)),
     children_pool(sizeof(NODE*)*8, std::max<size_t>(rhs.tree_size, 128))
@@ -98,7 +103,6 @@ namespace octomap {
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::init(){
 
-    this->setResolution(this->resolution);
     for (unsigned i = 0; i< 3; i++){
       max_value[i] = -(std::numeric_limits<double>::max( ));
       min_value[i] = std::numeric_limits<double>::max( );
@@ -139,8 +143,7 @@ namespace octomap {
 
   template <class NODE,class I>
   bool OcTreeBaseImpl<NODE,I>::operator== (const OcTreeBaseImpl<NODE,I>& other) const{
-    if (tree_depth != other.tree_depth || tree_max_val != other.tree_max_val
-        || resolution != other.resolution || tree_size != other.tree_size){
+    if (!OcTreeSpace::operator==(other)){
       return false;
     }
 
@@ -170,21 +173,7 @@ namespace octomap {
 
   template <class NODE,class I>
   void OcTreeBaseImpl<NODE,I>::setResolution(double r) {
-    resolution = r;
-    resolution_factor = 1. / resolution;
-
-    tree_center(0) = tree_center(1) = tree_center(2)
-      = (((double) tree_max_val) / resolution_factor);
-
-    // init node size lookup table:
-    sizeLookupTable.resize(tree_depth+1);
-    for(unsigned i = 1; i <= tree_depth; ++i){
-      sizeLookupTable[i] = resolution * double(((size_t)1) << (tree_depth - i));
-    }
-    // to keep from getting the wrong answer when at depth 0, double the
-    // previous result instead of possibly shifting the 1 off the end
-    sizeLookupTable[0] = 2.0 * sizeLookupTable[1];
-
+    OcTreeSpace::setResolution(r);
     size_changed = true;
   }
 
@@ -299,10 +288,7 @@ namespace octomap {
       // Assert that tree_size was maintained properly through the above code.
       assert(size() == calcNumNodes());
     }
-    tree_depth = depth;
-    tree_max_val = (1U << (depth-1));
-    // need to recalculate center and lut
-    setResolution(resolution);
+    OcTreeSpace::setTreeDepth(depth);
   }
 
   template <class NODE,class I>
@@ -482,159 +468,6 @@ namespace octomap {
         children_pool.free(node->children);
         node->children = NULL;
       }
-    }
-  }
-
-  template <class NODE,class I>
-  inline key_type OcTreeBaseImpl<NODE,I>::coordToKey(double coordinate, unsigned depth) const{
-    return coordToKeyAtDepthBoundsCheck(coordinate, depth);
-  }
-
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double coordinate, key_type& keyval) const {
-    bool rv;
-    key_type new_keyval = coordToKeyAtDepthBoundsCheck(coordinate, -1, &rv);
-    if (rv)
-    {
-      keyval = new_keyval;
-    }
-    return rv;
-  }
-
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double coordinate, unsigned depth, key_type& keyval) const {
-    bool rv;
-    key_type new_keyval = coordToKeyAtDepthBoundsCheck(coordinate, depth, &rv);
-    if (rv)
-    {
-      keyval = new_keyval;
-    }
-    return rv;
-  }
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(const point3d& point, OcTreeKey& key) const{
-
-    for (unsigned int i=0;i<3;i++) {
-      if (!coordToKeyChecked( point(i), key[i])) return false;
-    }
-    return true;
-  }
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(const point3d& point, unsigned depth, OcTreeKey& key) const{
-
-    for (unsigned int i=0;i<3;i++) {
-      if (!coordToKeyChecked( point(i), depth, key[i])) return false;
-    }
-    return true;
-  }
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double x, double y, double z, OcTreeKey& key) const{
-
-    if (!(coordToKeyChecked(x, key[0])
-       && coordToKeyChecked(y, key[1])
-       && coordToKeyChecked(z, key[2])))
-    {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  template <class NODE,class I>
-  bool OcTreeBaseImpl<NODE,I>::coordToKeyChecked(double x, double y, double z, unsigned depth, OcTreeKey& key) const{
-
-    if (!(coordToKeyChecked(x, depth, key[0])
-       && coordToKeyChecked(y, depth, key[1])
-       && coordToKeyChecked(z, depth, key[2])))
-    {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double coordinate, key_type& keyval) const {
-
-    double min = keyToCoord(0);
-    double max = keyToCoord((tree_max_val-1)+tree_max_val);
-
-    if (coordinate > max) {
-      coordinate = max;
-    } else if (coordinate < min) {
-      coordinate = min;
-    }
-
-    keyval = coordToKey(coordinate);
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double coordinate, unsigned depth, key_type& keyval) const {
-
-    coordToKeyClamped(coordinate, keyval);
-    keyval = adjustKeyAtDepth(keyval, depth);
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(const point3d& point, OcTreeKey& key) const{
-
-    for (unsigned int i=0;i<3;i++) {
-      coordToKeyClamped( point(i), key[i]);
-    }
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(const point3d& point, unsigned depth, OcTreeKey& key) const{
-
-    for (unsigned int i=0;i<3;i++) {
-      coordToKeyClamped( point(i), depth, key[i]);
-    }
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double x, double y, double z, OcTreeKey& key) const{
-
-    coordToKeyClamped(x, key[0]);
-    coordToKeyClamped(y, key[1]);
-    coordToKeyClamped(z, key[2]);
-  }
-
-  template <class NODE,class I>
-  void OcTreeBaseImpl<NODE,I>::coordToKeyClamped(double x, double y, double z, unsigned depth, OcTreeKey& key) const{
-
-    coordToKeyClamped(x, depth, key[0]);
-    coordToKeyClamped(y, depth, key[1]);
-    coordToKeyClamped(z, depth, key[2]);
-  }
-
-  template <class NODE,class I>
-  key_type OcTreeBaseImpl<NODE,I>::adjustKeyAtDepth(key_type key, unsigned int depth) const{
-    unsigned int diff = tree_depth - depth;
-
-    if(diff == 0)
-      return key;
-    if(diff >= tree_depth)
-      return tree_max_val;
-    else
-      return (((key-tree_max_val) >> diff) << diff) + (1 << (diff-1)) + tree_max_val;
-  }
-
-  template <class NODE,class I>
-  double OcTreeBaseImpl<NODE,I>::keyToCoord(key_type key, unsigned depth) const{
-    assert(depth <= tree_depth);
-
-    // root is centered on 0 = 0.0
-    if (depth == 0) {
-      return 0.0;
-    } else if (depth == tree_depth) {
-      return keyToCoord(key);
-    } else {
-      return (floor( (double(key)-double(this->tree_max_val)) /double(1 << (tree_depth - depth)) )  + 0.5 ) * this->getNodeSize(depth);
     }
   }
 

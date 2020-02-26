@@ -47,6 +47,7 @@
 #include "octomap_types.h"
 #include "OcTreeKey.h"
 #include "ScanGraph.h"
+#include "OcTreeSpace.h"
 
 
 namespace octomap {
@@ -69,7 +70,7 @@ namespace octomap {
    *    AbstractOcTree or AbstractOccupancyOcTree
    */
   template <class NODE,class INTERFACE>
-  class OcTreeBaseImpl : public INTERFACE {
+  class OcTreeBaseImpl : public INTERFACE, public OcTreeSpace {
 
   public:
     /// Make the templated NODE type available from the outside
@@ -102,16 +103,14 @@ namespace octomap {
 
     /// Change the resolution of the octree, scaling all voxels.
     /// This will not preserve the (metric) scale!
-    void setResolution(double r);
-    inline double getResolution() const { return resolution; }
+    virtual void setResolution(double r);
+    virtual double getResolution() const {return OcTreeSpace::getResolution();}
 
-    virtual unsigned int getTreeDepth () const { return tree_depth; }
+    virtual unsigned int getTreeDepth() const {return OcTreeSpace::getTreeDepth();}
     /// Alter the tree depth. If the tree is not empty, the tree will be
     /// altered to match the new depth, potentially discarding data.
     virtual void setTreeDepth (unsigned int depth);
 
-    inline double getNodeSize(unsigned depth) const {if(depth > tree_depth) depth=tree_depth; return sizeLookupTable[depth];}
-    
     /**
      * Clear KeyRay vector to minimize unneeded memory. This is only
      * useful for the StaticMemberInitializer classes, don't call it for
@@ -390,232 +389,6 @@ namespace octomap {
     /// @return end of the tree as iterator to all nodes (incl. inner)
     const tree_iterator end_tree() const {return tree_iterator_end;}
 
-    //
-    // Key / coordinate conversion functions
-    //
-
-    // Always returns the key_type that would go with coordinate.
-    // The return value will be aligned to the correct depth if depth is non-negative.
-    // The return value will be wrapped if in_bounds is false.
-    // The other coordToKey methods build on this basic function
-    inline key_type coordToKeyAtDepthBoundsCheck(double coordinate, int depth=-1, bool* in_bounds=nullptr) const{
-      assert (depth == -1 || depth <= (int)tree_depth);
-      double tree_center = static_cast<double>(tree_max_val);
-      double scaled_coord = std::floor(resolution_factor * coordinate) + tree_center;
-      if (in_bounds)
-        *in_bounds = (scaled_coord >= 0.0 && scaled_coord < 2.0 * tree_center);
-      key_type keyval = static_cast<key_type>(scaled_coord);
-      if (depth >= 0 && depth < (int)tree_depth) {
-        keyval = adjustKeyAtDepth(keyval, depth);
-      }
-      return keyval;
-    }
-
-    /// Converts from a single coordinate into a discrete key
-    inline key_type coordToKey(double coordinate) const{
-      return coordToKeyAtDepthBoundsCheck(coordinate);
-    }
-
-    /// Converts from a single coordinate into a discrete key at a given depth
-    key_type coordToKey(double coordinate, unsigned depth) const;
-
-
-    /// Converts from a 3D coordinate into a 3D addressing key
-    inline OcTreeKey coordToKey(const point3d& coord) const{
-      return OcTreeKey(coordToKey(coord(0)), coordToKey(coord(1)), coordToKey(coord(2)));
-    }
-
-    /// Converts from a 3D coordinate into a 3D addressing key
-    inline OcTreeKey coordToKey(double x, double y, double z) const{
-      return OcTreeKey(coordToKey(x), coordToKey(y), coordToKey(z));
-    }
-
-    /// Converts from a 3D coordinate into a 3D addressing key at a given depth
-    inline OcTreeKey coordToKey(const point3d& coord, unsigned depth) const{
-      if (depth == tree_depth)
-        return coordToKey(coord);
-      else
-        return OcTreeKey(coordToKey(coord(0), depth), coordToKey(coord(1), depth), coordToKey(coord(2), depth));
-    }
-
-    /// Converts from a 3D coordinate into a 3D addressing key at a given depth
-    inline OcTreeKey coordToKey(double x, double y, double z, unsigned depth) const{
-      if (depth == tree_depth)
-        return coordToKey(x,y,z);
-      else
-        return OcTreeKey(coordToKey(x, depth), coordToKey(y, depth), coordToKey(z, depth));
-    }
-
-    /**
-     * Adjusts a 3D key from the lowest level to correspond to a higher depth (by
-     * shifting the key values)
-     *
-     * @param key Input key, at the lowest tree level
-     * @param depth Target depth level for the new key
-     * @return Key for the new depth level
-     */
-    inline OcTreeKey adjustKeyAtDepth(const OcTreeKey& key, unsigned int depth) const{
-      if (depth >= tree_depth)
-        return key;
-
-      return OcTreeKey(adjustKeyAtDepth(key[0], depth), adjustKeyAtDepth(key[1], depth), adjustKeyAtDepth(key[2], depth));
-    }
-
-    /**
-     * Adjusts a single key value from the lowest level to correspond to a higher depth (by
-     * shifting the key value)
-     *
-     * @param key Input key, at the lowest tree level
-     * @param depth Target depth level for the new key
-     * @return Key for the new depth level
-     */
-    key_type adjustKeyAtDepth(key_type key, unsigned int depth) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey, with boundary checking.
-     *
-     * @param coord 3d coordinate of a point
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    bool coordToKeyChecked(const point3d& coord, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, with boundary checking.
-     *
-     * @param coord 3d coordinate of a point
-     * @param depth level of the key from the top
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    bool coordToKeyChecked(const point3d& coord, unsigned depth, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey, with boundary checking.
-     *
-     * @param x
-     * @param y
-     * @param z
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    bool coordToKeyChecked(double x, double y, double z, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, with boundary checking.
-     *
-     * @param x
-     * @param y
-     * @param z
-     * @param depth level of the key from the top
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    bool coordToKeyChecked(double x, double y, double z, unsigned depth, OcTreeKey& key) const;
-
-    /**
-     * Converts a single coordinate into a discrete addressing key, with boundary checking.
-     *
-     * @param coordinate 3d coordinate of a point
-     * @param key discrete adressing key, result
-     * @return true if coordinate is within the octree bounds (valid), false otherwise
-     */
-    bool coordToKeyChecked(double coordinate, key_type& key) const;
-
-    /**
-     * Converts a single coordinate into a discrete addressing key, with boundary checking.
-     *
-     * @param coordinate 3d coordinate of a point
-     * @param depth level of the key from the top
-     * @param key discrete adressing key, result
-     * @return true if coordinate is within the octree bounds (valid), false otherwise
-     */
-    bool coordToKeyChecked(double coordinate, unsigned depth, key_type& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey, clamping to the boundary.
-     *
-     * @param coord 3d coordinate of a point
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    void coordToKeyClamped(const point3d& coord, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, clamping to the boundary.
-     *
-     * @param coord 3d coordinate of a point
-     * @param depth level of the key from the top
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    void coordToKeyClamped(const point3d& coord, unsigned depth, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey, clamping to the boundary.
-     *
-     * @param x
-     * @param y
-     * @param z
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    void coordToKeyClamped(double x, double y, double z, OcTreeKey& key) const;
-
-    /**
-     * Converts a 3D coordinate into a 3D OcTreeKey at a certain depth, clamping to the boundary.
-     *
-     * @param x
-     * @param y
-     * @param z
-     * @param depth level of the key from the top
-     * @param key values that will be computed, an array of fixed size 3.
-     * @return true if point is within the octree (valid), false otherwise
-     */
-    void coordToKeyClamped(double x, double y, double z, unsigned depth, OcTreeKey& key) const;
-
-    /**
-     * Converts a single coordinate into a discrete addressing key, clamping to the boundary.
-     *
-     * @param coordinate 3d coordinate of a point
-     * @param key discrete adressing key, result
-     * @return true if coordinate is within the octree bounds (valid), false otherwise
-     */
-    void coordToKeyClamped(double coordinate, key_type& key) const;
-
-    /**
-     * Converts a single coordinate into a discrete addressing key, clamping to the boundary.
-     *
-     * @param coordinate 3d coordinate of a point
-     * @param depth level of the key from the top
-     * @param key discrete adressing key, result
-     * @return true if coordinate is within the octree bounds (valid), false otherwise
-     */
-    void coordToKeyClamped(double coordinate, unsigned depth, key_type& key) const;
-
-
-    /// converts from a discrete key at a given depth into a coordinate
-    /// corresponding to the key's center
-    double keyToCoord(key_type key, unsigned depth) const;
-
-    /// converts from a discrete key at the lowest tree level into a coordinate
-    /// corresponding to the key's center
-    inline double keyToCoord(key_type key) const{
-      return (double(key) - double(this->tree_max_val) + 0.5) * this->resolution;
-    }
-
-    /// converts from an addressing key at the lowest tree level into a coordinate
-    /// corresponding to the key's center
-    inline point3d keyToCoord(const OcTreeKey& key) const{
-      return point3d(keyToCoord(key[0]), keyToCoord(key[1]), keyToCoord(key[2]));
-    }
-
-    /// converts from an addressing key at a given depth into a coordinate
-    /// corresponding to the key's center
-    inline point3d keyToCoord(const OcTreeKey& key, unsigned depth) const{
-      return point3d(keyToCoord(key[0], depth), keyToCoord(key[1], depth), keyToCoord(key[2], depth));
-    }
-
  protected:
     /// Constructor to enable derived classes to change tree constants.
     /// This usually requires a re-implementation of some core tree-traversal functions as well!
@@ -683,22 +456,12 @@ namespace octomap {
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
 
-    // parameters of the tree
-    unsigned int tree_depth;
-    key_type tree_max_val;  ///< really center value, derived from tree_depth, for convenience
-    double resolution;  ///< in meters
-    double resolution_factor; ///< = 1. / resolution
-  
     size_t tree_size; ///< number of nodes in tree
     /// flag to denote whether the octree extent changed (for lazy min/max eval)
     bool size_changed;
 
-    point3d tree_center;  // coordinate offset of tree
-
     double max_value[3]; ///< max in x, y, z
     double min_value[3]; ///< min in x, y, z
-    /// contains the size of a voxel at level i (0: root node). tree_depth+1 levels (incl. 0)
-    std::vector<double> sizeLookupTable;
 
     /// data structure for ray casting, array for multithreading
     std::vector<KeyRay> keyrays;
