@@ -40,6 +40,10 @@
 #include <ciso646>
 
 #include <assert.h>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <vector>
 
 /* Libc++ does not implement the TR1 namespace, all c++11 related functionality
  * is instead implemented in the std namespace.
@@ -69,10 +73,10 @@ namespace octomap {
   /**
    * OcTreeKey is a container class for internal key addressing. The keys count the
    * number of cells (voxels) from the origin as discrete address of a voxel.
-   * @see OcTreeBaseImpl::coordToKey() and OcTreeBaseImpl::keyToCoord() for conversions.
+   * @see AbstractOcTree::coordToKey() and AbstractOcTree::keyToCoord() for conversions.
    */
   class OcTreeKey {
-    
+    using size_t = std::size_t;
   public:  
     OcTreeKey () {}
     OcTreeKey (key_type a, key_type b, key_type c){ 
