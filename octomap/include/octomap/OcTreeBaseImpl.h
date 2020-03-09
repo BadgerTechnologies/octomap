@@ -51,7 +51,7 @@
 
 
 namespace octomap {
-  
+
   // forward declaration for NODE children array
   class AbstractOcTreeNode;
 
@@ -79,7 +79,7 @@ namespace octomap {
     // the actual iterator implementation is included here
     // as a member from this file
     #include <octomap/OcTreeIterator.hxx>
-    
+
     OcTreeBaseImpl(double resolution);
     virtual ~OcTreeBaseImpl();
 
@@ -111,6 +111,8 @@ namespace octomap {
     /// altered to match the new depth, potentially discarding data.
     virtual void setTreeDepth (unsigned int depth);
 
+    inline double getNodeSize(unsigned depth) const {if(depth > tree_depth) depth=tree_depth; return sizeLookupTable[depth];}
+
     /**
      * Clear KeyRay vector to minimize unneeded memory. This is only
      * useful for the StaticMemberInitializer classes, don't call it for
@@ -119,22 +121,22 @@ namespace octomap {
     void clearKeyRays(){
       keyrays.clear();
     }
-    
+
     // -- Tree structure operations formerly contained in the nodes ---
 
     /// Creates (allocates) the root of the OcTree. @return TRUE if root node created, FALSE if
     /// root node not created because it already exists
     bool createRootNode();
-   
+
     /// Creates (allocates) the i-th child of the node. @return ptr to newly create NODE
     NODE* createNodeChild(NODE* node, unsigned int childIdx);
-    
+
     /// Deletes the i-th child of the node
     void deleteNodeChild(NODE* node, unsigned int childIdx);
-    
+
     /// @return ptr to child number childIdx of node
     NODE* getNodeChild(NODE* node, unsigned int childIdx) const;
-    
+
     /// @return const ptr to child number childIdx of node
     const NODE* getNodeChild(const NODE* node, unsigned int childIdx) const;
 
@@ -144,20 +146,20 @@ namespace octomap {
     /// A node is collapsible if all children exist, don't have children of their own
     /// and have the same occupancy value
     virtual bool isNodeCollapsible(const NODE* node) const;
-    
-    /** 
+
+    /**
      * Safe test if node has a child at index childIdx.
      * First tests if there are any children. Replaces node->childExists(...)
      * \return true if the child at childIdx exists
      */
     bool nodeChildExists(const NODE* node, unsigned int childIdx) const;
-    
-    /** 
+
+    /**
      * Safe test if node has any children. Replaces node->hasChildren(...)
      * \return true if node has at least one child
      */
     bool nodeHasChildren(const NODE* node) const;
-    
+
     /**
      * Expands a node (reverse of pruning): All children are created and
      * their occupancy probability is set to the node's value.
@@ -167,14 +169,14 @@ namespace octomap {
      *
      */
     virtual void expandNode(NODE* node);
-    
+
     /**
      * Prunes a node when it is collapsible
      * @return true if pruning was successful
      */
     virtual bool pruneNode(NODE* node);
-    
-    
+
+
     // --------
 
     /**
@@ -184,7 +186,7 @@ namespace octomap {
      */
     inline NODE* getRoot() const { return root; }
 
-    /** 
+    /**
      *  Search node at specified depth given a 3d point (depth=0: search full tree depth).
      *  You need to check if the returned node is NULL, since it can be in unknown space.
      *  @return pointer to node if found, NULL otherwise
@@ -212,14 +214,14 @@ namespace octomap {
      */
     bool deleteNode(double x, double y, double z, unsigned int depth = 0);
 
-    /** 
+    /**
      *  Delete a node (if exists) given a 3d point. Will always
      *  delete at the lowest level unless depth !=0, and expand pruned inner nodes as needed.
      *  Pruned nodes at level "depth" will directly be deleted as a whole.
      */
     bool deleteNode(const point3d& value, unsigned int depth = 0);
 
-    /** 
+    /**
      *  Delete a node (if exists) given an addressing key. Will always
      *  delete at the lowest level unless depth !=0, and expand pruned inner nodes as needed.
      *  Pruned nodes at level "depth" will directly be deleted as a whole.
@@ -342,7 +344,7 @@ namespace octomap {
     * coordinates of all nodes traversed by the beam. You still need to check
     * if a node at that coordinate exists (e.g. with search()).
     * @note: use the faster computeRayKeys method if possible.
-    * 
+    *
     * @param origin start coordinate of ray
     * @param end end coordinate of ray
     * @param ray KeyRay structure that holds the keys of all nodes traversed by the ray, excluding "end"
@@ -405,10 +407,10 @@ namespace octomap {
     void calcMinMax();
 
     void calcNumNodesRecurs(NODE* node, size_t& num_nodes) const;
-    
+
     /// recursive call of readData()
     std::istream& readNodesRecurs(NODE*, std::istream &s);
-    
+
     /// recursive call of writeData()
     std::ostream& writeNodesRecurs(const NODE*, std::ostream &s) const;
 
@@ -439,7 +441,7 @@ namespace octomap {
 
     /// recursive call of expand()
     void expandRecurs(NODE* node, unsigned int depth, unsigned int max_depth);
-    
+
     size_t getNumLeafNodesRecurs(const NODE* parent) const;
 
   private:
@@ -459,6 +461,12 @@ namespace octomap {
     void deleteNodeChildrenIfNecessary(NODE* node);
 
     NODE* root; ///< Pointer to the root NODE, NULL for empty tree
+
+    // parameters of the tree
+    unsigned int tree_depth;
+    key_type tree_max_val;  ///< really center value, derived from tree_depth, for convenience
+    double resolution;  ///< in meters
+    double resolution_factor; ///< = 1. / resolution
 
     size_t tree_size; ///< number of nodes in tree
     /// flag to denote whether the octree extent changed (for lazy min/max eval)

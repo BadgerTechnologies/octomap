@@ -45,7 +45,7 @@ namespace octomap {
    * Nodes to be used in OcTree. They represent 3d occupancy grid cells.
    * "value" stores their log-odds occupancy.
    *
-   * Note: If you derive a class (directly or indirectly) from OcTreeNode or 
+   * Note: If you derive a class (directly or indirectly) from OcTreeNode or
    * OcTreeDataNode, you have to implement (at least) the following functions:
    * createChild(), getChild(), getChild() const, expandNode() to avoid slicing
    * errors and memory-related bugs.
@@ -58,7 +58,6 @@ namespace octomap {
     OcTreeNode();
     ~OcTreeNode();
 
-    
     // -- node occupancy  ----------------------------
 
     /// \return occupancy probability of node
@@ -97,7 +96,6 @@ namespace octomap {
 
     /// adds p to the node's logOdds value (with no boundary / threshold checking!)
     void addValue(const float& p);
-    
 
   protected:
     // "value" stores log odds occupancy probability

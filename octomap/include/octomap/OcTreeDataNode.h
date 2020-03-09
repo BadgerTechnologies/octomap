@@ -44,7 +44,7 @@ namespace octomap {
 
 
   };
-  
+
   // forward declaration for friend in OcTreeDataNode
   template<typename NODE,typename I> class OcTreeBaseImpl;
 
@@ -53,12 +53,12 @@ namespace octomap {
    * This is the base class for nodes used in an OcTree. The used implementation
    * for occupancy mapping is in OcTreeNode.#
    * \tparam T data to be stored in the node (e.g. a float for probabilities)
-   * 
-   * Note: If you derive a class (directly or indirectly) from OcTreeDataNode, 
+   *
+   * Note: If you derive a class (directly or indirectly) from OcTreeDataNode,
    * you have to implement (at least) the following functions to avoid slicing
    * errors and memory-related bugs:
-   * createChild(), getChild(), getChild() const, expandNode() 
-   * See ColorOcTreeNode in ColorOcTree.h for an example. 
+   * createChild(), getChild(), getChild() const, expandNode()
+   * See ColorOcTreeNode in ColorOcTree.h for an example.
    */
   template<typename T> class OcTreeDataNode: public AbstractOcTreeNode {
     template<typename NODE, typename I>
@@ -72,24 +72,20 @@ namespace octomap {
     /// It is illegal to copy nodes, as the tree contains the allocator.
     OcTreeDataNode(const OcTreeDataNode& rhs) = delete;
 
-    /// Delete only own members. 
+    /// Delete only own members.
     /// OcTree maintains tree structure and must have deleted children already
     ~OcTreeDataNode();
 
     /// Copy the payload (data in "value") from rhs into this node
     /// Opposed to copy ctor, this does not clone the children as well
     void copyData(const OcTreeDataNode& from);
-    
+
     /// Equals operator, compares if the stored value is identical
     bool operator==(const OcTreeDataNode& rhs) const;
-    
-    
-    
-
 
     // -- children  ----------------------------------
 
-    /// Test whether the i-th child exists. 
+    /// Test whether the i-th child exists.
     /// @deprecated Replaced by tree->nodeChildExists(...)
     /// \return true if the i-th child exists
     OCTOMAP_DEPRECATED(bool childExists(unsigned int i) const);
@@ -114,7 +110,6 @@ namespace octomap {
 
     /// Make the templated data type available from the outside
     typedef T DataType;
-
 
   protected:
     /// pointer to array of children, may be NULL

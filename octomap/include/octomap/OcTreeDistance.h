@@ -34,7 +34,6 @@
 #ifndef OCTOMAP_OCTREE_DISTANCE_H
 #define OCTOMAP_OCTREE_DISTANCE_H
 
-
 #include "OcTreeBaseImpl.h"
 #include "AbstractOcTree.h"
 #include "OcTreeDataNode.h"
@@ -42,9 +41,9 @@
 
 
 namespace octomap {
-  class OcTreeDistance : public OcTreeBaseImpl<OcTreeDataNode<double>,AbstractOcTree> {
+  class OcTreeDistance : public OcTreeBaseImpl<OcTreeDataNode<double>, AbstractOcTree> {
   public:
-    OcTreeDistance(double res, double max_dist) : OcTreeBaseImpl<OcTreeDataNode<double>,AbstractOcTree>(res)
+    OcTreeDistance(double res, double max_dist) : OcTreeBaseImpl<OcTreeDataNode<double>, AbstractOcTree>(res)
     {
       max_distance = max_dist;
     };
@@ -53,7 +52,7 @@ namespace octomap {
     /// (Covariant return type requires an up-to-date compiler)
     OcTreeDistance* create() const {return new OcTreeDistance(this->resolution, this->max_distance); }
     std::string getTreeType() const {return "OcTreeDistance";}
-    
+
     double getMaxDistance();
     void setMaxDistance(double max_dist);
 
@@ -62,8 +61,6 @@ namespace octomap {
     double max_distance;
     bool setDistanceForKeyRecursive(OcTreeDataNode<double>* node, OcTreeKey key, unsigned int depth, double distance);
   };
+}; // namespace octomap
 
-  };
-
-
-#endif
+#endif // OCTOMAP_OCTREE_DISTANCE_H

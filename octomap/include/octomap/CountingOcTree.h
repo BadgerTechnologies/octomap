@@ -56,7 +56,7 @@ namespace octomap {
 
     CountingOcTreeNode();
     ~CountingOcTreeNode();
-    
+
     inline unsigned int getCount() const { return getValue(); }
     inline void increaseCount() { value++; }
     inline void setCount(unsigned c) {this->setValue(c); }
