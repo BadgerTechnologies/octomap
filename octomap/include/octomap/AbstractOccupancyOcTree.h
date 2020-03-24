@@ -236,7 +236,7 @@ namespace octomap {
     static const std::string binaryFileHeader;
   };
 
-}; // end namespace
+}  // end namespace
 
 
 #endif
