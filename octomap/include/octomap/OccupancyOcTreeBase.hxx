@@ -473,7 +473,7 @@ namespace octomap {
 
     // at last level, update node, end of recursion
     else {
-      if (use_change_detection) {
+      if (use_change_detection || nodeValueChangeCallback) {
         bool occBefore = this->isNodeOccupied(node);
         float valBefore = node->getLogOdds();
         node->setLogOdds(log_odds_value);
@@ -483,14 +483,16 @@ namespace octomap {
           valueChangeCallbackWrapper(key, depth, node_just_created, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
         }
 
-        if (node_just_created){  // new node
-          changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
-        } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
-          KeyBoolMap::iterator it = changed_keys.find(key);
-          if (it == changed_keys.end())
-            changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
-          else if (it->second == false)
-            changed_keys.erase(it);
+        if (use_change_detection) {
+          if (node_just_created){  // new node
+            changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
+          } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
+            KeyBoolMap::iterator it = changed_keys.find(key);
+            if (it == changed_keys.end())
+              changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
+            else if (it->second == false)
+              changed_keys.erase(it);
+          }
         }
       } else {
         node->setLogOdds(log_odds_value);
@@ -1503,7 +1505,7 @@ namespace octomap {
   void OccupancyOcTreeBase<NODE>::updateNodeLogOddsAndTrackChanges(NODE* node, const float& update,
                                                                    bool node_just_created, const OcTreeKey& key,
                                                                    unsigned int depth) {
-    if (use_change_detection) {
+    if (use_change_detection || nodeValueChangeCallback) {
       bool occBefore = this->isNodeOccupied(node);
       float valBefore = node->getLogOdds();
       updateNodeLogOdds(node, update);
@@ -1513,14 +1515,16 @@ namespace octomap {
         valueChangeCallbackWrapper(key, depth, node_just_created, valBefore, occBefore, node->getLogOdds(), this->isNodeOccupied(node));
       }
 
-      if (node_just_created){  // new node
-        changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
-      } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
-        KeyBoolMap::iterator it = changed_keys.find(key);
-        if (it == changed_keys.end())
-          changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
-        else if (it->second == false)
-          changed_keys.erase(it);
+      if (use_change_detection) {
+        if (node_just_created){  // new node
+          changed_keys.insert(std::pair<OcTreeKey,bool>(key, true));
+        } else if (occBefore != this->isNodeOccupied(node)) {  // occupancy changed, track it
+          KeyBoolMap::iterator it = changed_keys.find(key);
+          if (it == changed_keys.end())
+            changed_keys.insert(std::pair<OcTreeKey,bool>(key, false));
+          else if (it->second == false)
+            changed_keys.erase(it);
+        }
       }
     } else {
       updateNodeLogOdds(node, update);
