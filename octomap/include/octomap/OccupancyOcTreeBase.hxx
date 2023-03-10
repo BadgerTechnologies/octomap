@@ -813,22 +813,19 @@ namespace octomap {
         }
       } else {
         // The value node is a leaf, but we are not.
-        if (!maximum_only) {
+        if (!maximum_only && !copy_value_function) {
           // We are updating all values, not just maximum. Delete our children
           // and copy the value node's data into our node.
           this->deleteNodeChildren(node);
-          if (copy_value_function) {
-            copy_value_function(value_node, node, node_just_created, key, depth);
-          } else {
-            node->copyData(*value_node);
-          }
+          node->copyData(*value_node);
         } else {
           // Descend our tree, but keep using the node pointer from the
           // value tree's leaf to get its log odds value.  It is necessary
           // to descend. Consider, we may have log odds -1.0 and 2.0 in
           // our sub tree, and the value node may point to a leaf with
-          // value of 1.0. Since we are using maximum only, we must only
-          // change our log odds values that are smaller.
+          // value of 1.0. Since we are either using maximum only, or a custom
+          // copy value function, we may only change some of the child log odds
+          // values.
           for (unsigned int i=0; i<8; ++i) {
             if (this->nodeChildExists(node, i)) {
               // In this case the value node is already at a leaf.
@@ -850,7 +847,8 @@ namespace octomap {
               this->createNodeChild(node, i);
               NODE* child_node = this->getNodeChild(node, i);
               if (copy_value_function) {
-                copy_value_function(value_node, child_node, node_just_created, key, depth);
+                // Just created the node, so set node_just_created to true
+                copy_value_function(value_node, child_node, true, key, depth);
               } else {
                 child_node->copyData(*value_node);
               }

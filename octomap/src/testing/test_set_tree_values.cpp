@@ -213,6 +213,29 @@ int main(int /*argc*/, char** /*argv*/) {
     EXPECT_TRUE(node);
     EXPECT_EQ(-1.0, node->getLogOdds());
 
+    // Test having a pruned inner node for a value tree when using a custom
+    // copy function to implement invalid only copy.
+    tree.clear();
+    tree.setNodeValue(singleKey, 1.0);
+    tree.setTreeValues(&value_tree, &bounds_tree, false, false,
+            [](const OcTree::NodeType* value_node, OcTree::NodeType* tree_node, bool node_just_created, const OcTreeKey&, unsigned int)
+            {
+                // Only copy data for newly created nodes.
+                // A new node indicates that the node did not exist in the master map.
+                if (node_just_created)
+                {
+                    tree_node->copyData(*value_node);
+                }
+            });
+    node = tree.search(singleKey);
+    EXPECT_TRUE(node);
+    EXPECT_EQ(1.0, node->getLogOdds());
+    nextKey = singleKey;
+    nextKey[1] += 1;
+    node = tree.search(nextKey);
+    EXPECT_TRUE(node);
+    EXPECT_EQ(-1.0, node->getLogOdds());
+
     // Test having a pruned inner node in our tree, a sub-node in the value
     // tree while using delete first.
     tree.clear();
