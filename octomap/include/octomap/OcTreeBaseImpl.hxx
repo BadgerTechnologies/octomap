@@ -33,6 +33,7 @@
 
 #undef max
 #undef min
+#include <algorithm>
 #include <limits>
 
 #ifdef _OPENMP
@@ -48,8 +49,10 @@ namespace octomap {
     OcTreeSpace(in_resolution),
     root(NULL),
     tree_size(0),
-    node_pool(sizeof(NODE)),
-    children_pool(sizeof(NODE*)*8)
+    // Start the pools off a bit larger than the default of 32 to keep from
+    // allocating the intial smaller regions.
+    node_pool(sizeof(NODE), 128),
+    children_pool(sizeof(NODE*)*8, 128)
   {
 
     init();
@@ -63,8 +66,10 @@ namespace octomap {
     OcTreeSpace(in_resolution, in_tree_depth),
     root(NULL),
     tree_size(0),
-    node_pool(sizeof(NODE)),
-    children_pool(sizeof(NODE*)*8)
+    // Start the pools off a bit larger than the default of 32 to keep from
+    // allocating the intial smaller regions.
+    node_pool(sizeof(NODE), 128),
+    children_pool(sizeof(NODE*)*8, 128)
   {
     init();
 
@@ -83,8 +88,9 @@ namespace octomap {
     OcTreeSpace(rhs),
     root(NULL),
     tree_size(rhs.tree_size),
-    node_pool(sizeof(NODE)),
-    children_pool(sizeof(NODE*)*8)
+    // Start the pools off big enough to hold the tree being copied.
+    node_pool(sizeof(NODE), std::max<size_t>(rhs.tree_size, 128)),
+    children_pool(sizeof(NODE*)*8, std::max<size_t>(rhs.tree_size, 128))
   {
     init();
 
