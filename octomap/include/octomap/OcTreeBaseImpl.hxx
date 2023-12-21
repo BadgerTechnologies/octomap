@@ -472,33 +472,33 @@ namespace octomap {
   }
 
   template <class NODE,class I>
-  NODE* OcTreeBaseImpl<NODE,I>::search(const point3d& value, unsigned int depth) const {
+  NODE* OcTreeBaseImpl<NODE,I>::search(const point3d& value, unsigned int depth, unsigned int* found_depth) const {
     OcTreeKey key;
     if (!coordToKeyChecked(value, key)){
       OCTOMAP_ERROR_STR("Error in search: ["<< value <<"] is out of OcTree bounds!");
       return NULL;
     }
     else {
-      return this->search(key, depth);
+      return this->search(key, depth, found_depth);
     }
 
   }
 
   template <class NODE,class I>
-  NODE* OcTreeBaseImpl<NODE,I>::search(double x, double y, double z, unsigned int depth) const {
+  NODE* OcTreeBaseImpl<NODE,I>::search(double x, double y, double z, unsigned int depth, unsigned int* found_depth) const {
     OcTreeKey key;
     if (!coordToKeyChecked(x, y, z, key)){
       OCTOMAP_ERROR_STR("Error in search: ["<< x <<" "<< y << " " << z << "] is out of OcTree bounds!");
       return NULL;
     }
     else {
-      return this->search(key, depth);
+      return this->search(key, depth, found_depth);
     }
   }
 
 
   template <class NODE,class I>
-  NODE* OcTreeBaseImpl<NODE,I>::search (const OcTreeKey& key, unsigned int depth) const {
+  NODE* OcTreeBaseImpl<NODE,I>::search (const OcTreeKey& key, unsigned int depth, unsigned int* found_depth) const {
     assert(depth <= tree_depth);
     if (root == NULL)
       return NULL;
@@ -517,9 +517,11 @@ namespace octomap {
     NODE* curNode (root);
 
     int diff = tree_depth - depth;
+    unsigned int current_depth = 0;
 
     // follow nodes down to requested level (for diff = 0 it's the last level)
-    for (int i=(tree_depth-1); i>=diff; --i) {
+    for (int i=(tree_depth-1); i>=diff; --i, ++current_depth) {
+      assert(current_depth < depth);
       unsigned int pos = computeChildIdx(key_at_depth, i);
       if (nodeChildExists(curNode, pos)) {
         // cast needed: (nodes need to ensure it's the right pointer)
@@ -528,6 +530,9 @@ namespace octomap {
         // we expected a child but did not get it
         // is the current node a leaf already?
         if (!nodeHasChildren(curNode)) { // TODO similar check to nodeChildExists?
+          if (found_depth) {
+            *found_depth = current_depth;
+          }
           return curNode;
         } else {
           // it is not, search failed
@@ -535,6 +540,10 @@ namespace octomap {
         }
       }
     } // end for
+    assert(current_depth == depth);
+    if (found_depth) {
+      *found_depth = current_depth;
+    }
     return curNode;
   }
 
